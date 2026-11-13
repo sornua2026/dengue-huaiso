@@ -64,6 +64,14 @@ footer{padding:13px;text-align:center;background:#e6eef1;color:#718a96;font-size
 @media(max-width:1000px){.risk-grid{grid-template-columns:1fr}}
 @media(max-width:470px){.risk-row{grid-template-columns:91px minmax(0,1fr) 73px;gap:5px}.risk-row-label{font-size:10px}.risk-score strong{font-size:12px}.risk-score small{font-size:9px}.risk-chart{padding:10px}.risk-flags{gap:4px}}
 
+
+.month-tools{display:flex;gap:7px;align-items:center;flex-wrap:wrap;padding:9px 11px;border:1px solid #dbe8e9;border-radius:10px;background:#fff}
+.month-tools label{display:inline;margin:0;color:#426274;font-size:11px;white-space:nowrap}
+.month-tools input[type="month"]{width:168px;max-width:100%;padding:8px;font-weight:700}
+.month-tools button.btn{padding:8px 10px;white-space:nowrap}
+@media(max-width:560px){.month-tools{width:100%}.month-tools input[type="month"]{width:100%;flex:1 1 130px}.month-tools label{width:100%}}
+@media print{.month-tools{display:none!important}}
+
 </style>
 </head>
 <body>
@@ -121,7 +129,7 @@ function startWatchers(){unsubscribe.forEach(fn=>fn());unsubscribe=[];
  if(!me||!profile)return;
  const sv=collection(db,"surveys");
  const sq=admin()?sv:query(sv,where("village","==",vid()));
- unsubscribe.push(onSnapshot(sq,snapshot=>{const raw=snapshot.docs.map(d=>({id:d.id,...d.data()}));ignoredDocuments=raw.filter(r=>!validSurvey(r)).map(r=>r.id);records=raw.filter(validSurvey).sort((a,b)=>a.month.localeCompare(b.month));syncState="เชื่อมต่อ Firestore แล้ว · อ่านผลสำรวจได้ "+records.length+" รายการ"+(ignoredDocuments.length?" · พบเอกสารที่ไม่ใช่ผลสำรวจ "+ignoredDocuments.length+" รายการ":"");if(followLatest||!months().includes(month))month=months().slice(-1)[0]||"2026-11";render();if(ignoredDocuments.length)note("พบเอกสารที่ไม่ใช่ข้อมูลสำรวจ "+ignoredDocuments.length+" รายการใน surveys (ไม่รวมคำนวณ) โปรดตรวจสอบใน Firestore")},e=>{syncState="อ่านข้อมูลไม่สำเร็จ: "+(e.code||e.message);note(syncState);render()}));
+ unsubscribe.push(onSnapshot(sq,snapshot=>{const raw=snapshot.docs.map(d=>({id:d.id,...d.data()}));ignoredDocuments=raw.filter(r=>!validSurvey(r)).map(r=>r.id);records=raw.filter(validSurvey).sort((a,b)=>a.month.localeCompare(b.month));syncState="เชื่อมต่อ Firestore แล้ว · อ่านผลสำรวจได้ "+records.length+" รายการ"+(ignoredDocuments.length?" · พบเอกสารที่ไม่ใช่ผลสำรวจ "+ignoredDocuments.length+" รายการ":"");if(followLatest)month=months().slice(-1)[0]||dateNow().slice(0,7);render();if(ignoredDocuments.length)note("พบเอกสารที่ไม่ใช่ข้อมูลสำรวจ "+ignoredDocuments.length+" รายการใน surveys (ไม่รวมคำนวณ) โปรดตรวจสอบใน Firestore")},e=>{syncState="อ่านข้อมูลไม่สำเร็จ: "+(e.code||e.message);note(syncState);render()}));
  if(admin())unsubscribe.push(onSnapshot(collection(db,"cases"),snapshot=>{cases=snapshot.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{note("อ่านข้อมูลผู้ป่วยไม่ได้: "+e.message)}));
 }
 onAuthStateChanged(auth,async user=>{
@@ -218,12 +226,40 @@ function villageComparison(m){
  '<p class="risk-foot">เกณฑ์สีเป็นเกณฑ์คัดกรองภายในเบื้องต้นสำหรับแสดงผล (HI: 5% และ 10%; CI: 1% และ 5%) ไม่ใช่เกณฑ์ทางการเพื่อยืนยันหรือทำนายการระบาด ต้องประเมินร่วมกับผู้ป่วย สถานการณ์ในพื้นที่ ความครอบคลุมการสำรวจ และมาตรการที่หน่วยงานกำหนด ค่า — หมายถึงยังไม่มีข้อมูล ไม่ใช่ 0%</p></section>';
 }
 
-function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Set(rr.map(r=>r.village)).size,den=villagesVisible().reduce((s,v)=>s+v[2],0),cov=pct(a.houses,den);
+
+function monthIsValid(value){
+ return typeof value==="string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(value)
+   && Number(value.slice(0,4))>=2020 && Number(value.slice(0,4))<=2100;
+}
+function monthPicker(){
+ return '<div class="month-tools no-print"><label for="month-select">ประมวลผลเดือน/ปี</label>'+
+ '<button type="button" class="btn" data-shift-month="-1">‹ เดือนก่อนหน้า</button>'+
+ '<input type="month" id="month-select" min="2020-01" max="2100-12" value="'+safe(month)+'" aria-label="เลือกเดือนและปีที่ต้องการประมวลผล">'+
+ '<button type="button" class="btn" data-shift-month="1">เดือนถัดไป ›</button>'+
+ '<button type="button" class="btn" id="latest-month">ข้อมูลล่าสุด</button></div>';
+}
+function bindMonthPicker(){
+ const input=$("month-select");
+ if(input)input.addEventListener("change",e=>{
+  if(!monthIsValid(e.target.value)){alert("โปรดเลือกเดือนและปีที่ถูกต้อง");e.target.value=month;return}
+  followLatest=false;month=e.target.value;render();
+ });
+ document.querySelectorAll("[data-shift-month]").forEach(b=>b.addEventListener("click",()=>{
+  const [year,mo]=month.split("-").map(Number);
+  const d=new Date(year,mo-1+Number(b.dataset.shiftMonth),1);
+  const candidate=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+  if(monthIsValid(candidate)){followLatest=false;month=candidate;render()}
+ }));
+ const latest=$("latest-month");
+ if(latest)latest.addEventListener("click",()=>{followLatest=true;month=months().slice(-1)[0]||dateNow().slice(0,7);render()});
+}
+
+function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Set(rr.map(r=>r.village)).size,den=villagesVisible().reduce((s,v)=>s+v[2],0),cov=rr.length?pct(a.houses,den):null;
 const t=months().map(m=>{const b=aggregate(rowsOf(m));return {month:m,HI:hi(b),CI:ci(b)}});
 let alerts=[];if(reportedCount<villagesVisible().length)alerts.push("รายงานยังไม่ครบทุกหมู่บ้านที่ได้รับอนุญาต");rr.forEach(r=>{if(hi(r)>=5||ci(r)>=3)alerts.push("ม."+r.village+" "+name(r.village)+" มีค่า HI หรือ CI ถึงเกณฑ์ติดตามตัวอย่าง")});
 if(!alerts.length)alerts.push("ไม่พบสัญญาณตามเงื่อนไขติดตามตัวอย่าง ยังต้องเฝ้าระวังต่อเนื่อง");
-return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div><select id="month-select" style="width:auto;max-width:200px">'+months().map(m=>'<option value="'+m+'" '+(month===m?"selected":"")+'>เดือน'+mLabel(m)+'</option>').join("")+'</select></div>'+
-'<p class="muted">สถานะซิงก์: '+safe(syncState)+'</p><div class="kpis">'+[['House Index (HI)',num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
+return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div>'+monthPicker()+'</div>'+
+'<p class="muted">กำลังประมวลผลเดือน'+mLabel(month)+' · สถานะซิงก์: '+safe(syncState)+'</p>'+(rr.length===0?'<div class="notice warn">ยังไม่มีผลสำรวจในเดือน'+mLabel(month)+' — ค่า HI/CI ยังประเมินไม่ได้ ไม่ใช่ศูนย์เปอร์เซ็นต์</div>':'')+'<div class="kpis">'+[['House Index (HI)',num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
  (admin()?villageComparison(month):'')+
 '<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
 '<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
@@ -242,14 +278,14 @@ function renderCases(){return '<h2>ข้อมูลผู้ป่วย (ผ�
 '<div class="panel"><h3>สถิติปีงบประมาณย้อนหลัง</h3><div class="wrap"><table><thead><tr><th>ปีงบประมาณ</th><th class="num">จำนวนผู้ป่วย</th></tr></thead><tbody>'+YEARS.map(x=>'<tr><td>'+x.year+'</td><td class="num">'+x.count+'</td></tr>').join("")+'</tbody></table></div></div>'+
 '<div class="panel"><h3>บันทึกยอดรายเดือน</h3><form id="case-form"><div class="fields">'+field("วันที่รายงาน","caseDate","date",dateNow(),"required")+villageSelect("1")+field("จำนวนผู้ป่วย (ราย)","count","number","","required min=0 step=1")+'<div class="full"><label>หมายเหตุ (ไม่ระบุตัวบุคคล)</label><textarea id="caseNote"></textarea></div></div><div class="gap" style="margin-top:12px"><button class="btn primary">บันทึกผู้ป่วยรายเดือน</button></div></form></div>'+
 '<div class="panel"><div class="wrap"><table><thead><tr><th>เดือน</th><th>หมู่บ้าน</th><th class="num">จำนวนราย</th></tr></thead><tbody>'+cases.map(r=>'<tr><td>'+safe(r.month)+'</td><td>ม.'+safe(r.village)+'</td><td class="num">'+num(r.count)+'</td></tr>').join("")+'</tbody></table></div></div>'}
-function report(){const rr=rowsOf(month),a=aggregate(rr),risky=rr.filter(r=>r.houseNumbers||r.riskPoints);return '<div class="flex"><div><h2>รายงานเฝ้าระวังลูกน้ำยุงลาย</h2><p class="muted">ประจำเดือน '+mLabel(month)+'</p></div><button class="btn no-print" id="print">พิมพ์รายงาน</button></div><div class="panel"><h3>1. ผลการสำรวจ</h3><p>สำรวจ '+num(a.houses)+' หลังคาเรือน พบจำนวนบ้านที่พบลูกน้ำ '+num(a.positiveHouses)+' หลัง ค่า HI '+num(hi(a),2)+'% สำรวจภาชนะ '+num(a.containers)+' ใบ พบจำนวนภาชนะที่พบลูกน้ำ '+num(a.positiveContainers)+' ใบ ค่า CI '+num(ci(a),2)+'%</p>'+table(month)+
+function report(){const rr=rowsOf(month),a=aggregate(rr),risky=rr.filter(r=>r.houseNumbers||r.riskPoints);return '<div class="flex"><div><h2>รายงานเฝ้าระวังลูกน้ำยุงลาย</h2><p class="muted">ประจำเดือน '+mLabel(month)+'</p></div>'+monthPicker()+'<button class="btn no-print" id="print">พิมพ์รายงาน</button></div><div class="panel"><h3>1. ผลการสำรวจ</h3><p>สำรวจ '+num(a.houses)+' หลังคาเรือน พบจำนวนบ้านที่พบลูกน้ำ '+num(a.positiveHouses)+' หลัง ค่า HI '+num(hi(a),2)+'% สำรวจภาชนะ '+num(a.containers)+' ใบ พบจำนวนภาชนะที่พบลูกน้ำ '+num(a.positiveContainers)+' ใบ ค่า CI '+num(ci(a),2)+'%</p>'+table(month)+
 '<h3 style="margin-top:20px">2. บ้านเลขที่และจุดเสี่ยง</h3>'+(risky.length?'<div class="wrap"><table><thead><tr><th>หมู่บ้าน</th><th>บ้านเลขที่</th><th>จุดเสี่ยง</th><th>หมายเหตุ</th></tr></thead><tbody>'+risky.map(r=>'<tr><td>ม.'+safe(r.village)+'</td><td class="detail">'+safe(r.houseNumbers)+'</td><td class="detail">'+safe(r.riskPoints)+'</td><td class="detail">'+safe(r.note)+'</td></tr>').join("")+'</tbody></table></div>':'<p class="muted">ยังไม่มีรายละเอียดบ้านเลขที่หรือจุดเสี่ยง</p>')+
 '<h3 style="margin-top:20px">3. แนวทางติดตาม</h3><p>ให้ อสม. และเจ้าหน้าที่ติดตามจุดเสี่ยงและดำเนินมาตรการ 3 เก็บ ป้องกัน 3 โรค รวมทั้งตรวจสอบข้อมูลผู้ป่วยจากแหล่งรายงานทางการก่อนสรุปสถานการณ์</p></div>'}
 function settings(){return '<h2>ตั้งค่าและจัดการข้อมูล</h2><div class="panel"><h3>บัญชีผู้ใช้งาน</h3><p><b>อีเมล:</b> '+safe(me?.email||"")+'</p><p><b>บทบาท:</b> '+(admin()?"ผู้ดูแลระบบ":"อสม. หมู่ "+safe(vid()))+'</p><p><b>UID:</b> <code>'+safe(me?.uid||"")+'</code></p><div class="gap"><button class="btn" id="copy-uid">คัดลอก UID</button><button class="btn danger" id="logout">ออกจากระบบ</button></div></div>'+
 
 '<div class="panel"><h3>การสำรองข้อมูล</h3><p class="muted">ดาวน์โหลดเฉพาะข้อมูลที่บัญชีนี้ได้รับสิทธิให้เข้าถึง ไม่ควรเผยแพร่ไฟล์สำรองที่มีบ้านเลขที่ต่อสาธารณะ</p><button class="btn" id="backup">ดาวน์โหลดสำรอง JSON</button></div><div class="notice">หากต้องการสร้างบัญชี อสม. เพิ่ม ให้ผู้ดูแลสร้างใน Firebase Authentication แล้วเพิ่มเอกสาร users/{UID} ที่กำหนด role และ village โดยไม่ต้องให้ อสม. สมัครเอง</div>'}
 function render(){if(!profile||!me)return;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const html=page==="dashboard"?dashboard():page==="survey"?survey():page==="history"?history():page==="cases"&&admin()?renderCases():page==="report"?report():settings();$("view").innerHTML=html;bind()}
-function bind(){if(page==="dashboard"){const el=$("month-select");if(el)el.onchange=e=>{month=e.target.value;followLatest=false;render()}}
+function bind(){if(page==="dashboard"||page==="report")bindMonthPicker()
 if(page==="survey"){for(const id of ["houses","positiveHouses","containers","positiveContainers"])$(id).addEventListener("input",calculate);calculate();$("survey-form").onsubmit=saveSurvey;$("clear").onclick=()=>{editing=null;render()}}
 if(page==="history"){$("csv").onclick=downloadCsv;document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{editing=b.dataset.edit;page="survey";render()});document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteSurvey(b.dataset.del))}
 if(page==="cases"&&admin())$("case-form").onsubmit=saveCase;
