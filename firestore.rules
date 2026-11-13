@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function profilePath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+    function allowedUser() {
+      return request.auth != null
+        && exists(profilePath())
+        && get(profilePath()).data.enabled == true;
+    }
+    function admin() {
+      return allowedUser() && get(profilePath()).data.role == "admin";
+    }
+    function villageWorker() {
+      return allowedUser() && get(profilePath()).data.role == "vhw";
+    }
+    function assignedVillage() {
+      return get(profilePath()).data.village;
+    }
+    function canEditVillage(villageId) {
+      return admin() || (villageWorker() && assignedVillage() == villageId);
+    }
+
+    function validSurvey(x, id) {
+      return x.keys().hasAll([
+          "month","date","village","houses","positiveHouses",
+          "containers","positiveContainers","houseNumbers",
+          "riskPoints","note","updatedAt","updatedBy"
+        ])
+        && x.keys().hasOnly([
+          "month","date","village","houses","positiveHouses",
+          "containers","positiveContainers","houseNumbers",
+          "riskPoints","note","updatedAt","updatedBy"
+        ])
+        && x.month is string
+        && x.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && x.date is string
+        && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]$')
+        && x.village in ["1","2","12","16","18","19"]
+        && id == x.month + "_" + x.village
+        && x.houses is int && x.houses > 0 && x.houses <= 10000
+        && x.positiveHouses is int && x.positiveHouses >= 0
+        && x.positiveHouses <= x.houses
+        && x.containers is int && x.containers > 0 && x.containers <= 100000
+        && x.positiveContainers is int && x.positiveContainers >= 0
+        && x.positiveContainers <= x.containers
+        && x.houseNumbers is string && x.houseNumbers.size() <= 1200
+        && x.riskPoints is string && x.riskPoints.size() <= 2000
+        && x.note is string && x.note.size() <= 2000
+        && x.updatedAt == request.time
+        && x.updatedBy == request.auth.uid;
+    }
+
+    // ผู้ใช้ทั่วไปอ่านโปรไฟล์ตนเองได้ แต่แก้สิทธิเองไม่ได้
+    match /users/{userId} {
+      allow get: if request.auth != null
+        && (request.auth.uid == userId || admin());
+      allow list, create, update, delete: if admin();
+    }
+
+    match /surveys/{surveyId} {
+      // เมื่อใช้ query ฝั่ง อสม. ต้องใส่ where("village","==",assignedVillage)
+      allow get, list: if admin()
+        || (villageWorker() && resource.data.village == assignedVillage());
+
+      allow create: if allowedUser()
+        && canEditVillage(request.resource.data.village)
+        && validSurvey(request.resource.data, surveyId);
+
+      allow update: if allowedUser()
+        && canEditVillage(resource.data.village)
+        && request.resource.data.village == resource.data.village
+        && request.resource.data.month == resource.data.month
+        && validSurvey(request.resource.data, surveyId);
+
+      allow delete: if admin();
+    }
+
+    function validCase(x, id) {
+      return x.keys().hasAll([
+          "month","date","village","count","note","updatedAt","updatedBy"
+        ])
+        && x.keys().hasOnly([
+          "month","date","village","count","note","updatedAt","updatedBy"
+        ])
+        && x.month is string
+        && x.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
+        && x.date is string
+        && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]$')
+        && x.village in ["1","2","12","16","18","19"]
+        && id == x.month + "_" + x.village
+        && x.count is int && x.count >= 0 && x.count <= 10000
+        && x.note is string && x.note.size() <= 1000
+        && x.updatedAt == request.time
+        && x.updatedBy == request.auth.uid;
+    }
+
+    match /cases/{caseId} {
+      allow get, list: if admin();
+      allow create, update: if admin()
+        && validCase(request.resource.data, caseId);
+      allow delete: if admin();
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
