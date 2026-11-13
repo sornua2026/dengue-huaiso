@@ -76,7 +76,7 @@ const $=id=>document.getElementById(id);
 const V=[["1","บ้านห้วยซ้อเหนือ",336],["2","บ้านซ้อใต้",209],["12","บ้านร้องหัวฝาย",147],["16","บ้านชัยพัฒนา",248],["18","บ้านพัฒนารุ่งเรือง",203],["19","บ้านเกษตรสมบูรณ์",171]];
 const BASE=[["1",296,15,913,20],["2",185,11,863,17],["12",118,5,567,17],["16",211,7,687,16],["18",190,5,487,10],["19",157,7,574,11]];
 const YEARS=[{year:2567,count:24},{year:2568,count:1},{year:2569,count:0}];
-let profile=null,me=null,records=[],cases=[],month="2026-11",page="dashboard",editing=null,editingCase=null,unsubscribe=[],errorMessage="",followLatest=true;
+let profile=null,me=null,records=[],cases=[],syncState="กำลังโหลดข้อมูลจาก Firestore",ignoredDocuments=[],month="2026-11",page="dashboard",editing=null,editingCase=null,unsubscribe=[],errorMessage="",followLatest=true;
 const safe=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num=(x,n=0)=>x==null||!Number.isFinite(x)?"—":Number(x).toLocaleString("en-US",{minimumFractionDigits:n,maximumFractionDigits:n});
 const pct=(a,b)=>b>0?100*a/b:null;
@@ -85,7 +85,8 @@ const dateNow=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMon
 const mLabel=m=>m?new Date(Number(m.slice(0,4)),Number(m.slice(5,7))-1,1).toLocaleDateString("th-TH",{month:"long",year:"numeric"}):"—";
 const aggregate=rows=>rows.reduce((a,r)=>({houses:a.houses+r.houses,positiveHouses:a.positiveHouses+r.positiveHouses,containers:a.containers+r.containers,positiveContainers:a.positiveContainers+r.positiveContainers}),{houses:0,positiveHouses:0,containers:0,positiveContainers:0});
 const hi=a=>pct(a.positiveHouses,a.houses),ci=a=>pct(a.positiveContainers,a.containers);
-const months=()=>[...new Set(records.map(r=>r.month))].sort();
+const months=()=>[...new Set(records.map(r=>r.month).filter(m=>typeof m==="string"))].sort();
+const validSurvey=r=>r&&typeof r.month==="string"&&/^\d{4}-(0[1-9]|1[0-2])$/.test(r.month)&&V.some(v=>v[0]===r.village)&&["houses","positiveHouses","containers","positiveContainers"].every(k=>Number.isInteger(r[k])&&r[k]>=0)&&r.houses>0&&r.containers>0&&r.positiveHouses<=r.houses&&r.positiveContainers<=r.containers;
 const rowsOf=m=>records.filter(r=>r.month===m);
 const admin=()=>profile?.role==="admin";
 const vid=()=>profile?.village;
@@ -95,11 +96,11 @@ function startWatchers(){unsubscribe.forEach(fn=>fn());unsubscribe=[];
  if(!me||!profile)return;
  const sv=collection(db,"surveys");
  const sq=admin()?sv:query(sv,where("village","==",vid()));
- unsubscribe.push(onSnapshot(sq,snapshot=>{records=snapshot.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.month.localeCompare(b.month));if(followLatest||!months().includes(month))month=months().slice(-1)[0]||"2026-11";render()},e=>{note("อ่านข้อมูลสำรวจไม่ได้: "+e.message)}));
+ unsubscribe.push(onSnapshot(sq,snapshot=>{const raw=snapshot.docs.map(d=>({id:d.id,...d.data()}));ignoredDocuments=raw.filter(r=>!validSurvey(r)).map(r=>r.id);records=raw.filter(validSurvey).sort((a,b)=>a.month.localeCompare(b.month));syncState="เชื่อมต่อ Firestore แล้ว · อ่านผลสำรวจได้ "+records.length+" รายการ"+(ignoredDocuments.length?" · พบเอกสารที่ไม่ใช่ผลสำรวจ "+ignoredDocuments.length+" รายการ":"");if(followLatest||!months().includes(month))month=months().slice(-1)[0]||"2026-11";render();if(ignoredDocuments.length)note("พบเอกสารที่ไม่ใช่ข้อมูลสำรวจ "+ignoredDocuments.length+" รายการใน surveys (ไม่รวมคำนวณ) โปรดตรวจสอบใน Firestore")},e=>{syncState="อ่านข้อมูลไม่สำเร็จ: "+(e.code||e.message);note(syncState);render()}));
  if(admin())unsubscribe.push(onSnapshot(collection(db,"cases"),snapshot=>{cases=snapshot.docs.map(d=>({id:d.id,...d.data()}));render()},e=>{note("อ่านข้อมูลผู้ป่วยไม่ได้: "+e.message)}));
 }
 onAuthStateChanged(auth,async user=>{
- unsubscribe.forEach(fn=>fn());unsubscribe=[];me=user;profile=null;records=[];cases=[];
+ unsubscribe.forEach(fn=>fn());unsubscribe=[];me=user;profile=null;records=[];cases=[];syncState="กำลังตรวจสอบสิทธิและโหลดข้อมูล";ignoredDocuments=[];
  $("loading").style.display="none";
  if(!user){$("login-panel").style.display="block";$("app").style.display="none";$("nav").style.display="none";return}
  try{const p=await getDoc(doc(db,"users",user.uid));
@@ -124,14 +125,25 @@ function latestPanel(){
 const recent=records.slice().sort((a,b)=>(b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0)||b.date.localeCompare(a.date)).slice(0,10);
 return '<div class="panel"><h3>ผลสำรวจที่บันทึกล่าสุด (รวมทุกเดือน)</h3>'+(recent.length?'<div class="wrap"><table><thead><tr><th>วันที่</th><th>หมู่บ้าน</th><th class="num">บ้านสำรวจ</th><th class="num">บ้านพบลูกน้ำ</th><th class="num">ภาชนะสำรวจ</th><th class="num">ภาชนะพบลูกน้ำ</th><th>หมายเหตุ</th></tr></thead><tbody>'+recent.map(r=>'<tr><td>'+safe(r.date)+'</td><td>ม.'+safe(r.village)+' '+safe(name(r.village))+'</td><td class="num">'+num(r.houses)+'</td><td class="num">'+num(r.positiveHouses)+'</td><td class="num">'+num(r.containers)+'</td><td class="num">'+num(r.positiveContainers)+'</td><td class="detail">'+safe(r.note||"—")+'</td></tr>').join("")+'</tbody></table></div>':'<p class="muted">ยังไม่มีรายงานสำรวจใหม่</p>')+'</div>';
 }
+function sixVillageOverview(){
+ if(!admin())return "";
+ const lines=V.map(v=>{
+   const target=records.filter(r=>r.village===v[0]).sort((a,b)=>b.month.localeCompare(a.month)||b.date.localeCompare(a.date));
+   const last=target[0]?.month||null;
+   const same=last?target.filter(r=>r.month===last):[];
+   const sum=aggregate(same);
+   return '<tr><td>ม.'+v[0]+' '+safe(v[1])+'</td><td>'+(last?mLabel(last):"ยังไม่มีข้อมูล")+'</td><td class="num">'+same.length+'</td><td class="num">'+(last?num(hi(sum),2)+"%":"—")+'</td><td class="num">'+(last?num(ci(sum),2)+"%":"—")+'</td></tr>';
+ });
+ return '<div class="panel"><div class="flex"><h3>สรุปข้อมูลล่าสุดครบทั้ง 6 หมู่บ้าน (สำหรับแอดมิน)</h3><span class="tag">เชื่อมข้อมูลจาก Firestore</span></div><p class="muted">แสดงเดือนล่าสุดของแต่ละหมู่บ้านแยกกัน จึงไม่รวมค่าดัชนีจากคนละเดือนเข้าด้วยกัน</p><div class="wrap"><table><thead><tr><th>หมู่บ้าน</th><th>เดือนล่าสุด</th><th class="num">รายการสำรวจ</th><th class="num">HI</th><th class="num">CI</th></tr></thead><tbody>'+lines.join("")+'</tbody></table></div></div>';
+}
 function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Set(rr.map(r=>r.village)).size,den=villagesVisible().reduce((s,v)=>s+v[2],0),cov=pct(a.houses,den);
 const t=months().map(m=>{const b=aggregate(rowsOf(m));return {month:m,HI:hi(b),CI:ci(b)}});
 let alerts=[];if(reportedCount<villagesVisible().length)alerts.push("รายงานยังไม่ครบทุกหมู่บ้านที่ได้รับอนุญาต");rr.forEach(r=>{if(hi(r)>=5||ci(r)>=3)alerts.push("ม."+r.village+" "+name(r.village)+" มีค่า HI หรือ CI ถึงเกณฑ์ติดตามตัวอย่าง")});
 if(!alerts.length)alerts.push("ไม่พบสัญญาณตามเงื่อนไขติดตามตัวอย่าง ยังต้องเฝ้าระวังต่อเนื่อง");
 return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div><select id="month-select" style="width:auto;max-width:200px">'+months().map(m=>'<option value="'+m+'" '+(month===m?"selected":"")+'>เดือน'+mLabel(m)+'</option>').join("")+'</select></div>'+
-'<div class="kpis">'+[['House Index (HI)',num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
+'<p class="muted">สถานะซิงก์: '+safe(syncState)+'</p><div class="kpis">'+[['House Index (HI)',num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
 '<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
-'<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
+'<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>+sixVillageOverview()'+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
 function survey(){const r=records.find(z=>z.id===editing),currentV=admin()?"1":vid();
 return '<div class="flex"><div><h2>'+(r?"แก้ไข":"บันทึก")+'ผลสำรวจลูกน้ำยุงลาย</h2><div class="muted">บันทึกหลายรายการต่อเดือนต่อหมู่บ้านได้ — ห้ามนับครัวเรือนซ้ำ</div></div><span class="tag">'+(admin()?"ผู้ดูแล":"อสม. หมู่ "+safe(vid()))+'</span></div>'+
 '<div class="grid"><div class="panel"><form id="survey-form"><div class="fields">'+field("วันที่สำรวจ","date","date",r?.date||dateNow(),"required")+villageSelect(r?.village||currentV)+field("จำนวนบ้านที่สำรวจ","houses","number",r?.houses??"",'required min="1" step="1"')+field("จำนวนบ้านที่พบลูกน้ำ","positiveHouses","number",r?.positiveHouses??"",'required min="0" step="1"')+field("จำนวนภาชนะที่สำรวจ","containers","number",r?.containers??"",'required min="1" step="1"')+field("จำนวนภาชนะที่พบลูกน้ำ","positiveContainers","number",r?.positiveContainers??"",'required min="0" step="1"')+
