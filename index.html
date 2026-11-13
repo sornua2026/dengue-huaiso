@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c465a">
+<meta name="description" content="ระบบบันทึกดัชนีลูกน้ำยุงลาย HI/CI และเฝ้าระวังไข้เลือดออก รพ.สต.บ้านซ้อเหนือ">
+<title>เฝ้าระวังไข้เลือดออก | รพ.สต.บ้านซ้อเหนือ</title>
+<style>
+:root{font-family:system-ui,"Noto Sans Thai",Tahoma,sans-serif;color:#1d3b4e;background:#eef4f6;font-size:14px}
+*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{background:linear-gradient(110deg,#103249,#0b6570);color:#fff;padding:23px max(18px,calc((100vw - 1130px)/2))}
+header .eyebrow{text-transform:uppercase;letter-spacing:1.3px;font-size:10px;font-weight:750;color:#a4e5dd}
+header h1{font-size:clamp(19px,3.6vw,27px);line-height:1.35;margin:7px 0 5px}
+header p{font-size:12px;margin:0;color:#cee7e8}
+main{max-width:1170px;margin:auto;padding:18px}nav{background:#fff;display:flex;gap:5px;padding:8px max(12px,calc((100vw - 1150px)/2));overflow-x:auto;border-bottom:1px solid #dde8ed}
+nav button{border:none;background:transparent;border-radius:9px;padding:10px 14px;white-space:nowrap;color:#617989;font-weight:750}
+nav button.active{background:#e0f3f0;color:#0d777b}
+h2{font-size:18px;margin:0}h3{font-size:15px;margin:0 0 10px}
+h2,h3{color:#163e51}.muted{font-size:12px;color:#66808e}.small{font-size:11px;color:#66808e}
+.section-head,.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kpi,.panel{background:#fff;border:1px solid #dfe9ee;border-radius:12px;min-width:0}
+.kpi{padding:15px}.kpi span{font-size:11px;color:#69818e;font-weight:600}.kpi strong{display:block;color:#0b6170;font-size:28px;margin:5px 0;line-height:1.3}.kpi small{font-size:10px;color:#7a929e}
+.grid{display:grid;grid-template-columns:1.12fr 1fr;gap:13px;margin-bottom:14px}.panel{padding:16px;margin-bottom:14px}.grid .panel{margin-bottom:0}
+.chart{height:220px}.chart svg{width:100%;height:100%;display:block}
+.table-wrap{width:100%;overflow-x:auto}table{width:100%;border-collapse:collapse;white-space:nowrap}th{background:#f0f6f8;color:#537080;font-size:11px;text-align:left}th,td{padding:10px 9px;border-bottom:1px solid #e9eff1;font-size:12px}tr:last-child td{border:0}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.details{white-space:normal;min-width:130px;max-width:220px;overflow-wrap:anywhere}.total{background:#eaf5f3;font-weight:800}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}
+label{font-size:12px;font-weight:750;color:#577281;display:block;margin-bottom:6px}
+input,select,textarea{border:1px solid #ccdde2;border-radius:9px;background:white;color:#234555;padding:11px;width:100%;min-width:0;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#0d9292;box-shadow:0 0 0 3px #00978b1c}
+textarea{min-height:70px;resize:vertical}
+button.btn{border:1px solid #c6d9df;border-radius:9px;background:#fff;color:#2b6171;padding:10px 13px;font-size:12px;font-weight:750}
+button.btn.primary{background:#087c81;color:#fff;border-color:#087c81}
+button.btn.danger{color:#ad4744;border-color:#edcbc7}button.btn.smallbtn{padding:6px 9px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+.notice{background:#eef9f7;border:1px solid #d1ebe7;color:#3a6871;border-radius:10px;padding:12px;font-size:12px;line-height:1.7;margin-bottom:12px}
+.notice.warn{background:#fff7ee;border-color:#efdebd;color:#815b31}
+.tag{font-size:10px;padding:3px 8px;background:#e5f5f1;color:#098277;border-radius:20px;font-weight:750}
+.tag.warn{color:#99621f;background:#fff1d8}
+.signal{padding:10px 0;border-bottom:1px solid #ebf0f3}.signal:last-child{border:0}.signal strong{font-size:12px}.signal div{font-size:11px;color:#728b96;margin-top:3px}
+footer{padding:13px 18px;text-align:center;background:#e7f0f3;border-top:1px solid #d8e6ea;color:#65818e;font-size:11px}
+.hidden{display:none!important}
+@media(max-width:750px){main{padding:11px}header{padding:19px 15px}.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.kpi{padding:12px}.kpi strong{font-size:23px}.panel{padding:13px}.form-grid{gap:11px}}
+@media(max-width:390px){.form-grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{header,nav,footer,.no-print,button{display:none!important}main{padding:0}.panel{border:0;padding:0;break-inside:avoid}body{background:white}#report{display:block!important}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">Dengue Surveillance · Huai So</div>
+<h1>ระบบเฝ้าระวังโรคไข้เลือดออกและดัชนีลูกน้ำยุงลาย</h1>
+<p>โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านซ้อเหนือ · ตำบลห้วยซ้อ อำเภอเชียงของ จังหวัดเชียงราย</p>
+</header>
+<nav class="no-print" id="nav">
+<button data-page="dashboard">ภาพรวม</button>
+<button data-page="survey">บันทึก HI / CI</button>
+<button data-page="history">ประวัติการสำรวจ</button>
+<button data-page="cases">ข้อมูลผู้ป่วย</button>
+<button data-page="report">รายงาน</button>
+<button data-page="settings">สำรองข้อมูล</button>
+</nav>
+<main id="main">
+<section id="dashboard"></section>
+<section id="survey" class="hidden"></section>
+<section id="history" class="hidden"></section>
+<section id="cases" class="hidden"></section>
+<section id="report" class="hidden"></section>
+<section id="settings" class="hidden"></section>
+</main>
+<footer>ข้อมูลจัดเก็บในเบราว์เซอร์ของเครื่องนี้เท่านั้น · สำรองข้อมูล JSON เป็นประจำ · หลีกเลี่ยงการเผยแพร่บ้านเลขที่โดยไม่จำเป็น</footer>
+<input id="importFile" type="file" accept=".json,application/json" hidden>
+<script>
+(function(){
+"use strict";
+var KEY="hso-dengue-monitor-2026-v1";
+var villages=[
+{id:"1",name:"บ้านห้วยซ้อเหนือ",households:336},
+{id:"2",name:"บ้านซ้อใต้",households:209},
+{id:"12",name:"บ้านร้องหัวฝาย",households:147},
+{id:"16",name:"บ้านชัยพัฒนา",households:248},
+{id:"18",name:"บ้านพัฒนารุ่งเรือง",households:203},
+{id:"19",name:"บ้านเกษตรสมบูรณ์",households:171}
+];
+var base=[["1",296,15,913,20],["2",185,11,863,17],["12",118,5,567,17],["16",211,7,687,16],["18",190,5,487,10],["19",157,7,574,11]];
+function starter(){return {version:3,population:2563,villages:JSON.parse(JSON.stringify(villages)),surveys:base.map(function(x,i){return {id:"base"+i,date:"2026-09-21",village:x[0],houses:x[1],positiveHouses:x[2],containers:x[3],positiveContainers:x[4],houseNumbers:"",riskPoints:"",note:"ข้อมูลตั้งต้นปี 2569 (ตรวจสอบวันที่สำรวจ)"}}),monthlyCases:[],annualCases:[{year:2567,count:24},{year:2568,count:1},{year:2569,count:0}],settings:{hi:5,ci:3}}}
+var db=starter(),page="dashboard",month="2026-09",editing=null,caseEdit=null,yearEdit=null,saveEnabled=true;
+var $=function(id){return document.getElementById(id)};
+function safe(x){return String(x==null?"":x).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function f(x,n){if(x===null||x===undefined||!Number.isFinite(Number(x)))return "—";return Number(x).toLocaleString("en-US",{minimumFractionDigits:n||0,maximumFractionDigits:n||0})}
+function percentage(a,b){return b>0?100*a/b:null}
+function total(r){return r.reduce(function(a,x){a.houses+=Number(x.houses);a.positiveHouses+=Number(x.positiveHouses);a.containers+=Number(x.containers);a.positiveContainers+=Number(x.positiveContainers);return a},{houses:0,positiveHouses:0,containers:0,positiveContainers:0})}
+function HI(a){return percentage(a.positiveHouses,a.houses)}function CI(a){return percentage(a.positiveContainers,a.containers)}
+function months(){return Array.from(new Set(db.surveys.map(function(r){return r.date.slice(0,7)}))).sort()}
+function current(){var d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function monthLabel(m){if(!m)return "—";var a=m.split("-");return new Date(Number(a[0]),Number(a[1])-1,1).toLocaleDateString("th-TH",{month:"long",year:"numeric"})}
+function vname(id){var v=db.villages.find(function(x){return x.id===id});return v?v.name:"ไม่ทราบหมู่บ้าน"}
+function monthRows(m){return db.surveys.filter(function(r){return r.date.slice(0,7)===m})}
+function casesIn(m){return db.monthlyCases.filter(function(r){return r.date.slice(0,7)===m}).reduce(function(a,r){return a+Number(r.count)},0)}
+function allHouses(){return db.villages.reduce(function(a,v){return a+v.households},0)}
+function unique(){return String(Date.now())+"-"+String(Math.floor(Math.random()*100000))}
+function validateSurvey(r){if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||!db.villages.some(function(v){return v.id===r.village}))return false;var vals=[r.houses,r.positiveHouses,r.containers,r.positiveContainers];if(vals.some(function(v){return !Number.isInteger(Number(v))||Number(v)<0}))return false;return Number(r.houses)>0&&Number(r.containers)>0&&Number(r.positiveHouses)<=Number(r.houses)&&Number(r.positiveContainers)<=Number(r.containers)}
+function load(){try{var x=localStorage.getItem(KEY);if(!x)return;var d=JSON.parse(x);if(!d||!Array.isArray(d.surveys)||!Array.isArray(d.villages))throw Error("invalid");db=d;db.monthlyCases=db.monthlyCases||[];db.annualCases=db.annualCases||[];db.settings=db.settings||{hi:5,ci:3};db.surveys.forEach(function(r){r.houseNumbers=r.houseNumbers||"";r.riskPoints=r.riskPoints||"";r.note=r.note||""})}catch(e){saveEnabled=false;alert("ไม่สามารถอ่านข้อมูลที่บันทึกไว้ได้ กรุณาเก็บไฟล์สำรองเดิมก่อนเริ่มบันทึกใหม่")}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(db));saveEnabled=true}catch(e){saveEnabled=false;alert("เบราว์เซอร์ไม่อนุญาตให้จัดเก็บข้อมูล กรุณาสำรองข้อมูล JSON")}}
+function selector(id,value){return '<select id="'+id+'">'+db.villages.map(function(v){return '<option value="'+v.id+'" '+(v.id===value?"selected":"")+'>ม.'+v.id+' '+safe(v.name)+'</option>'}).join("")+"</select>"}
+function monthSelector(id){return '<select id="'+id+'" style="width:auto;max-width:200px">'+months().map(function(m){return '<option value="'+m+'" '+(month===m?"selected":"")+'>'+monthLabel(m)+'</option>'}).join("")+"</select>"}
+function card(title,val,sub){return '<div class="kpi"><span>'+title+'</span><strong>'+val+'</strong><small>'+sub+'</small></div>'}
+function table(m){var rr=monthRows(m);var out='<div class="table-wrap"><table><thead><tr><th>หมู่บ้าน</th><th class="num">บ้านสำรวจ</th><th class="num">จำนวนบ้านที่พบลูกน้ำ</th><th class="num">HI %</th><th class="num">ภาชนะสำรวจ</th><th class="num">จำนวนภาชนะที่พบลูกน้ำ</th><th class="num">CI %</th></tr></thead><tbody>';
+db.villages.forEach(function(v){var r=rr.find(function(x){return x.village===v.id});if(!r){out+='<tr><td>ม.'+v.id+' '+safe(v.name)+'</td><td colspan="6" class="muted">ยังไม่ได้รับรายงานเดือนนี้</td></tr>';return}out+='<tr><td>ม.'+v.id+' '+safe(v.name)+'</td><td class="num">'+f(r.houses)+'</td><td class="num">'+f(r.positiveHouses)+'</td><td class="num">'+f(HI(r),2)+'</td><td class="num">'+f(r.containers)+'</td><td class="num">'+f(r.positiveContainers)+'</td><td class="num">'+f(CI(r),2)+'</td></tr>'});var a=total(rr);
+return out+'<tr class="total"><td>รวมที่รายงาน</td><td class="num">'+f(a.houses)+'</td><td class="num">'+f(a.positiveHouses)+'</td><td class="num">'+f(HI(a),2)+'</td><td class="num">'+f(a.containers)+'</td><td class="num">'+f(a.positiveContainers)+'</td><td class="num">'+f(CI(a),2)+'</td></tr></tbody></table></div>'}
+function plot(points,color){var good=points.filter(function(r){return r.value!==null});if(!good.length)return '<p class="muted">ยังไม่มีข้อมูลแนวโน้ม</p>';var max=Math.max(1,...good.map(function(r){return r.value*1.2})),w=550,h=205,l=42,top=20,bottom=35,py=function(v){return top+(h-top-bottom)*(1-v/max)},px=function(i){return l+(good.length===1?(w-l-12)/2:i*(w-l-12)/(good.length-1))};var out='<svg viewBox="0 0 '+w+' '+h+'" aria-label="กราฟแสดงแนวโน้ม" role="img">';
+for(var i=0;i<5;i++){var y=top+i*(h-top-bottom)/4;out+='<line x1="'+l+'" x2="'+(w-12)+'" y1="'+y+'" y2="'+y+'" stroke="#e4ecef"/><text x="'+(l-7)+'" y="'+(y+4)+'" text-anchor="end" font-size="10" fill="#8da1aa">'+f(max*(4-i)/4,1)+'</text>'}
+out+='<polyline points="'+good.map(function(p,i){return px(i)+','+py(p.value)}).join(" ")+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-linejoin="round"/>';
+good.forEach(function(p,i){out+='<circle cx="'+px(i)+'" cy="'+py(p.value)+'" r="4.5" fill="'+color+'"><title>'+safe(monthLabel(p.month))+': '+f(p.value,2)+'</title></circle><text x="'+px(i)+'" y="'+(h-9)+'" text-anchor="middle" font-size="10" fill="#8098a3">'+safe(p.month.slice(5))+'/'+safe(p.month.slice(2,4))+'</text>'});return out+"</svg>"}
+function dashboard(){var rr=monthRows(month),a=total(rr),cover=percentage(a.houses,allHouses()),all=months();var points=all.map(function(m){var z=total(monthRows(m));return {month:m,hi:HI(z),ci:CI(z)}});var warn=[];
+if(rr.length<6)warn.push("ข้อมูลการสำรวจยังไม่ครบทั้ง 6 หมู่บ้าน");
+rr.forEach(function(r){if(HI(r)>=db.settings.hi||CI(r)>=db.settings.ci)warn.push("ม."+r.village+" "+vname(r.village)+" มีค่าดัชนีถึงเกณฑ์ติดตามภายใน")});
+if(casesIn(month)>0)warn.unshift("มีข้อมูลผู้ป่วย "+casesIn(month)+" รายที่บันทึกในเดือนนี้ โปรดตรวจสอบกับระบบรายงานทางการ");
+if(!warn.length)warn.push("ยังไม่พบเงื่อนไขแจ้งเตือนภายในที่ตั้งไว้ ควรเฝ้าระวังต่อเนื่อง");
+$("dashboard").innerHTML='<div class="section-head"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ค่าดัชนีคำนวณจากข้อมูลรายงานที่บันทึกจริง</div></div>'+monthSelector("dashboard-month")+'</div>'+
+'<div class="kpis">'+card("House Index (HI)",f(HI(a),2)+"%","จำนวนบ้านที่พบลูกน้ำ / บ้านที่สำรวจ")+card("Container Index (CI)",f(CI(a),2)+"%","จำนวนภาชนะที่พบลูกน้ำ / ภาชนะที่สำรวจ")+card("ความครอบคลุมการสำรวจ",f(cover,2)+"%",f(a.houses)+" / "+f(allHouses())+" หลังคาเรือน")+card("หมู่บ้านส่งรายงาน",rr.length+" / 6",monthLabel(month))+'</div>'+
+'<div class="grid"><div class="panel"><h3>แนวโน้มค่า HI (%)</h3><div class="chart">'+plot(points.map(function(r){return {month:r.month,value:r.hi}}),"#078e88")+'</div></div><div class="panel"><h3>ประเด็นที่ควรติดตาม</h3>'+warn.map(function(s){return '<div class="signal"><strong>'+safe(s)+'</strong></div>'}).join("")+'<p class="small">เกณฑ์ที่ตั้งไว้เป็นเงื่อนไขติดตามภายใน ไม่ใช่เกณฑ์ยืนยันการระบาด</p></div></div>'+
+'<div class="panel"><h3>แนวโน้มค่า CI (%)</h3><div class="chart">'+plot(points.map(function(r){return {month:r.month,value:r.ci}}),"#597caf")+'</div></div>'+
+'<div class="panel"><div class="panel-head"><h3>สรุปรายหมู่บ้าน</h3><span class="tag">'+safe(monthLabel(month))+'</span></div>'+table(month)+'</div>'+
+'<div class="actions no-print"><button class="btn primary" data-page="survey">+ บันทึกผลสำรวจ</button><button class="btn" data-page="report">เปิดรายงาน</button></div>';
+$("dashboard-month").addEventListener("change",function(e){month=e.target.value;render()})}
+function formField(label,id,type,value,extra){return '<div><label for="'+id+'">'+label+'</label><input id="'+id+'" type="'+type+'" value="'+safe(value==null?"":value)+'" '+(extra||"")+'></div>'}
+function renderSurvey(){var old=db.surveys.find(function(r){return r.id===editing});$("survey").innerHTML='<div class="section-head"><div><h2>'+(old?"แก้ไขผลสำรวจ":"บันทึกผลสำรวจลูกน้ำยุงลาย")+'</h2><div class="muted">ข้อมูล 1 รายการต่อหมู่บ้านต่อเดือน · คำนวณ HI/CI อัตโนมัติ</div></div></div>'+
+'<div class="grid"><div class="panel"><form id="survey-form"><div class="form-grid">'+
+formField("วันที่สำรวจ","s-date","date",old?old.date:current(),"required")+('<div><label>หมู่บ้าน</label>'+selector("s-village",old?old.village:"1")+'</div>')+
+formField("จำนวนบ้านที่สำรวจ","s-houses","number",old?old.houses:"",'min="1" step="1" required')+
+formField("จำนวนบ้านที่พบลูกน้ำ","s-hp","number",old?old.positiveHouses:"",'min="0" step="1" required')+
+formField("จำนวนภาชนะที่สำรวจ","s-containers","number",old?old.containers:"",'min="1" step="1" required')+
+formField("จำนวนภาชนะที่พบลูกน้ำ","s-cp","number",old?old.positiveContainers:"",'min="0" step="1" required')+
+'<div class="full"><label for="s-numbers">บ้านเลขที่ที่พบลูกน้ำ</label><textarea id="s-numbers" placeholder="เช่น 12, 24/1, 56">'+safe(old?old.houseNumbers:"")+'</textarea></div>'+
+'<div class="full"><label for="s-risks">จุดเสี่ยงที่พบ</label><textarea id="s-risks" placeholder="เช่น โอ่งน้ำไม่มีฝาปิด ยางรถยนต์เก่า">'+safe(old?old.riskPoints:"")+'</textarea></div>'+
+'<div class="full"><label for="s-note">หมายเหตุ / การแก้ไข</label><textarea id="s-note" placeholder="รายละเอียดการติดตามและผลการแก้ไข">'+safe(old?old.note:"")+'</textarea></div></div>'+
+'<div class="notice" id="live-result">กรอกตัวเลขเพื่อคำนวณ</div>'+
+'<div class="actions"><button type="submit" class="btn primary">'+(old?"บันทึกการแก้ไข":"บันทึกผลสำรวจ")+'</button><button type="button" class="btn" id="cancel-edit">ล้างแบบฟอร์ม</button></div></form></div>'+
+'<div class="panel"><h3>สูตรคำนวณ</h3><div class="notice"><b>HI (%)</b><br>จำนวนบ้านที่พบลูกน้ำ ÷ จำนวนบ้านที่สำรวจ × 100</div><div class="notice"><b>CI (%)</b><br>จำนวนภาชนะที่พบลูกน้ำ ÷ จำนวนภาชนะที่สำรวจ × 100</div><div class="notice warn">หากสำรวจพบลูกน้ำหลายภาชนะในบ้านเดียว ให้นับ “จำนวนบ้านที่พบลูกน้ำ” เพียง 1 หลังคาเรือน แต่แยกนับจำนวนภาชนะที่พบลูกน้ำตามจริง</div><p class="muted">สำหรับข้อมูลเดิมที่ไม่มีบ้านเลขที่หรือจุดเสี่ยง ระบบจะเว้นว่างไว้จนกว่าจะบันทึกเพิ่ม</p></div></div>';
+["s-houses","s-hp","s-containers","s-cp"].forEach(function(id){$(id).addEventListener("input",live)});
+$("survey-form").addEventListener("submit",saveSurvey);$("cancel-edit").addEventListener("click",function(){editing=null;renderSurvey()});live()}
+function live(){var h=Number($("s-houses").value),hp=Number($("s-hp").value),c=Number($("s-containers").value),cp=Number($("s-cp").value);$("live-result").innerHTML="<b>คำนวณอัตโนมัติ:</b> HI = "+f(percentage(hp,h),2)+"% &nbsp; | &nbsp; CI = "+f(percentage(cp,c),2)+"%"}
+function saveSurvey(e){e.preventDefault();var r={id:editing||unique(),date:$("s-date").value,village:$("s-village").value,houses:Number($("s-houses").value),positiveHouses:Number($("s-hp").value),containers:Number($("s-containers").value),positiveContainers:Number($("s-cp").value),houseNumbers:$("s-numbers").value.trim(),riskPoints:$("s-risks").value.trim(),note:$("s-note").value.trim()};
+if(!validateSurvey(r)){alert("จำนวนที่พบลูกน้ำต้องไม่เกินจำนวนที่สำรวจ และต้องกรอกจำนวนเต็มที่ถูกต้อง");return}
+if(db.surveys.some(function(x){return x.id!==editing&&x.village===r.village&&x.date.slice(0,7)===r.date.slice(0,7)})){alert("หมู่บ้านนี้มีข้อมูลเดือนเดียวกันแล้ว กรุณาแก้ไขรายการเดิม");return}
+var v=db.villages.find(function(x){return x.id===r.village});if(r.houses>v.households&&!confirm("จำนวนบ้านที่สำรวจเกินจำนวนหลังคาเรือนเป้าหมาย ยืนยันบันทึกหรือไม่?"))return;
+if(editing)db.surveys=db.surveys.map(function(x){return x.id===editing?r:x});else db.surveys.push(r);
+month=r.date.slice(0,7);editing=null;save();show("history");alert("บันทึกข้อมูลสำเร็จ")}
+function history(){var list=db.surveys.slice().sort(function(a,b){return b.date.localeCompare(a.date)});$("history").innerHTML='<div class="section-head"><div><h2>ประวัติผลสำรวจ ('+list.length+' รายการ)</h2><div class="muted">รวมบ้านเลขที่ จุดเสี่ยง และหมายเหตุ</div></div><button class="btn no-print" id="history-csv">ดาวน์โหลด CSV</button></div>'+
+'<div class="panel"><div class="table-wrap"><table><thead><tr><th>วันที่</th><th>หมู่บ้าน</th><th class="num">จำนวนบ้านที่พบลูกน้ำ</th><th class="num">HI %</th><th class="num">จำนวนภาชนะที่พบลูกน้ำ</th><th class="num">CI %</th><th>บ้านเลขที่ที่พบลูกน้ำ</th><th>จุดเสี่ยงที่พบ</th><th>หมายเหตุ</th><th class="no-print">แก้ไข / ลบ</th></tr></thead><tbody>'+
+list.map(function(r){return '<tr><td>'+safe(r.date)+'</td><td>ม.'+r.village+' '+safe(vname(r.village))+'</td><td class="num">'+f(r.positiveHouses)+'</td><td class="num">'+f(HI(r),2)+'</td><td class="num">'+f(r.positiveContainers)+'</td><td class="num">'+f(CI(r),2)+'</td><td class="details">'+safe(r.houseNumbers||"—")+'</td><td class="details">'+safe(r.riskPoints||"—")+'</td><td class="details">'+safe(r.note||"—")+'</td><td class="no-print"><button class="btn smallbtn" data-edit="'+safe(r.id)+'">แก้ไข</button> <button class="btn smallbtn danger" data-delete="'+safe(r.id)+'">ลบ</button></td></tr>'}).join("")+'</tbody></table></div></div>';
+$("history-csv").onclick=exportCSV;
+$("history").querySelectorAll("[data-edit]").forEach(function(b){b.onclick=function(){editing=b.dataset.edit;show("survey")}});$("history").querySelectorAll("[data-delete]").forEach(function(b){b.onclick=function(){if(confirm("ต้องการลบรายการสำรวจนี้หรือไม่?")){db.surveys=db.surveys.filter(function(r){return r.id!==b.dataset.delete});save();render()}}})}
+function cases(){var cases=db.annualCases.slice().sort(function(a,b){return a.year-b.year});$("cases").innerHTML='<div class="section-head"><div><h2>ข้อมูลผู้ป่วยไข้เลือดออก</h2><div class="muted">สถิติรวมปีงบประมาณ 2567–2569 ตั้งต้น: 24, 1 และ 0 ราย</div></div></div>'+
+'<div class="notice warn">จำนวนผู้ป่วยย้อนหลังเป็นยอดรวมรายปี ไม่ได้มีข้อมูลรายเดือนหรือรายหมู่บ้าน จึงไม่กระจายยอดเหล่านั้นเป็นข้อมูลรายเดือนโดยอัตโนมัติ</div>'+
+'<div class="grid"><div class="panel"><h3>ยอดผู้ป่วยรวมรายปี</h3><div class="table-wrap"><table><thead><tr><th>ปีงบประมาณ</th><th class="num">จำนวนผู้ป่วย</th><th class="no-print">จัดการ</th></tr></thead><tbody>'+cases.map(function(r){return '<tr><td>'+r.year+'</td><td class="num">'+r.count+'</td><td class="no-print"><button class="btn smallbtn" data-edit-year="'+r.year+'">แก้ไข</button></td></tr>'}).join("")+'</tbody></table></div></div>'+
+'<div class="panel"><h3>เพิ่มหรือแก้ไขยอดผู้ป่วยรายปี</h3><form id="year-form"><div class="form-grid">'+formField("ปีงบประมาณ (พ.ศ.)","y-year","number",yearEdit||2570,'min="2500" max="2700" required')+formField("จำนวนผู้ป่วย (ราย)","y-count","number",yearEdit?cases.find(function(r){return r.year===yearEdit})?.count:"",'min="0" required')+'</div><div class="actions"><button class="btn primary">บันทึกยอดปีงบประมาณ</button></div></form></div></div>'+
+'<div class="panel"><h3>บันทึกจำนวนผู้ป่วยรายเดือน</h3><form id="cases-form"><div class="form-grid">'+formField("วันที่รายงาน","c-date","date",current(),"required")+'<div><label>หมู่บ้าน</label>'+selector("c-village","1")+'</div>'+formField("จำนวนราย","c-count","number","",'min="0" required')+'<div class="full"><label>หมายเหตุ</label><textarea id="c-note"></textarea></div></div><div class="actions"><button class="btn primary">บันทึกผู้ป่วยรายเดือน</button></div></form><p class="small">ข้อมูลนี้เป็นจำนวนรายสรุป ไม่ใช่ทะเบียนผู้ป่วยรายบุคคล</p><div class="table-wrap"><table><thead><tr><th>เดือน</th><th>หมู่บ้าน</th><th class="num">จำนวนผู้ป่วย</th><th>หมายเหตุ</th></tr></thead><tbody>'+db.monthlyCases.map(function(r){return '<tr><td>'+safe(r.date.slice(0,7))+'</td><td>ม.'+safe(r.village)+' '+safe(vname(r.village))+'</td><td class="num">'+f(r.count)+'</td><td>'+safe(r.note||"—")+'</td></tr>'}).join("")+'</tbody></table></div></div>';
+$("year-form").onsubmit=function(e){e.preventDefault();var year=Number($("y-year").value),count=Number($("y-count").value);if(!Number.isInteger(year)||!Number.isInteger(count)||count<0){alert("กรุณาตรวจสอบข้อมูล");return}db.annualCases=db.annualCases.filter(function(x){return x.year!==yearEdit&&x.year!==year});db.annualCases.push({year:year,count:count});yearEdit=null;save();render()};
+$("cases").querySelectorAll("[data-edit-year]").forEach(function(b){b.onclick=function(){yearEdit=Number(b.dataset.editYear);render()}});$("cases-form").onsubmit=function(e){e.preventDefault();var date=$("c-date").value,village=$("c-village").value,count=Number($("c-count").value);if(!date||!Number.isInteger(count)||count<0){alert("กรุณาตรวจสอบข้อมูล");return}var existing=db.monthlyCases.find(function(x){return x.date.slice(0,7)===date.slice(0,7)&&x.village===village});var r={id:existing?existing.id:unique(),date:date,village:village,count:count,note:$("c-note").value.trim()};db.monthlyCases=existing?db.monthlyCases.map(function(x){return x.id===existing.id?r:x}):db.monthlyCases.concat([r]);save();render()}}
+function report(){var rr=monthRows(month),a=total(rr),withRisk=rr.filter(function(r){return r.houseNumbers||r.riskPoints});$("report").innerHTML='<div class="section-head no-print"><div><h2>รายงานวิเคราะห์สถานการณ์</h2><div class="muted">เพื่อใช้ประกอบการวางแผนเฝ้าระวังและควบคุมโรค</div></div><div>'+monthSelector("report-month")+' <button class="btn primary" id="print-report">พิมพ์ / บันทึก PDF</button></div></div>'+
+'<div class="panel"><h2>รายงานผลการเฝ้าระวังลูกน้ำยุงลาย</h2><p class="muted">รพ.สต.บ้านซ้อเหนือ ประจำเดือน'+monthLabel(month)+'</p>'+
+'<h3>1. ผลการสำรวจ</h3><p>สำรวจบ้าน '+f(a.houses)+' หลังคาเรือน พบจำนวนบ้านที่พบลูกน้ำ '+f(a.positiveHouses)+' หลังคาเรือน ค่า HI '+f(HI(a),2)+'% สำรวจภาชนะ '+f(a.containers)+' ใบ พบจำนวนภาชนะที่พบลูกน้ำ '+f(a.positiveContainers)+' ใบ ค่า CI '+f(CI(a),2)+'% มีรายงานจาก '+rr.length+' ใน 6 หมู่บ้าน</p>'+table(month)+
+'<h3 style="margin-top:18px">2. บ้านเลขที่และจุดเสี่ยงที่พบ</h3>'+
+(withRisk.length?'<div class="table-wrap"><table><thead><tr><th>หมู่บ้าน</th><th>บ้านเลขที่</th><th>จุดเสี่ยงที่พบ</th><th>หมายเหตุ</th></tr></thead><tbody>'+withRisk.map(function(r){return '<tr><td>ม.'+r.village+'</td><td class="details">'+safe(r.houseNumbers||"—")+'</td><td class="details">'+safe(r.riskPoints||"—")+'</td><td class="details">'+safe(r.note||"—")+'</td></tr>'}).join("")+'</tbody></table></div>':'<p class="muted">ยังไม่ระบุรายละเอียดบ้านเลขที่หรือจุดเสี่ยงในเดือนนี้</p>')+
+'<h3 style="margin-top:18px">3. สถานการณ์ผู้ป่วย</h3><p>'+ (db.monthlyCases.some(function(r){return r.date.slice(0,7)===month})?'มีข้อมูลผู้ป่วยรายเดือนที่บันทึก '+casesIn(month)+' ราย โปรดตรวจสอบกับรายงานโรคทางการ':'ยังไม่มีรายการผู้ป่วยรายเดือนสำหรับช่วงที่เลือก จึงไม่สามารถสรุปว่ามีผู้ป่วย 0 รายได้')+'</p>'+
+'<h3>4. ข้อเสนอเพื่อดำเนินงาน</h3><p>ติดตามครัวเรือนและจุดเสี่ยงที่พบ จัดการภาชนะน้ำขัง ส่งเสริมมาตรการ 3 เก็บ ป้องกัน 3 โรค และประสานภาคีเครือข่ายเมื่อข้อมูลชี้ว่าต้องเฝ้าระวังเพิ่มเติม โดยไม่ใช้ค่า HI/CI เพียงอย่างเดียวเป็นหลักฐานยืนยันการระบาด</p><p class="small">ข้อมูลภายในเพื่อการปฏิบัติงาน ระมัดระวังการเผยแพร่บ้านเลขที่ต่อสาธารณะ</p></div>';
+$("report-month").onchange=function(e){month=e.target.value;render()};$("print-report").onclick=function(){window.print()}}
+function settings(){var warning=saveEnabled?"":"<div class='notice warn'>เบราว์เซอร์ไม่อนุญาตให้บันทึก กรุณาส่งออกไฟล์ JSON</div>";
+$("settings").innerHTML='<div class="section-head"><div><h2>ตั้งค่า / สำรองข้อมูล</h2><div class="muted">โปรแกรมทำงานได้โดยไม่ใช้ฐานข้อมูลภายนอก แต่ข้อมูลไม่ซิงก์ข้ามอุปกรณ์</div></div></div>'+warning+
+'<div class="grid"><div class="panel"><h3>สำรองข้อมูล</h3><p class="muted">ควรดาวน์โหลดไฟล์ JSON ทุกครั้งหลังบันทึกข้อมูลใหม่จำนวนมาก และเก็บในที่ที่มีการจำกัดสิทธิ์เข้าถึง</p><div class="actions"><button class="btn primary" id="backup">ดาวน์โหลดสำรองข้อมูล JSON</button><button class="btn" id="csv">ส่งออกข้อมูล CSV</button><button class="btn" id="import">นำเข้าข้อมูล JSON</button></div></div>'+
+'<div class="panel"><h3>เงื่อนไขติดตามภายใน</h3><form id="settings-form"><div class="form-grid">'+formField("แจ้งติดตามเมื่อ HI ≥ (%)","st-hi","number",db.settings.hi,'min="0" max="100" step="0.01" required')+formField("แจ้งติดตามเมื่อ CI ≥ (%)","st-ci","number",db.settings.ci,'min="0" max="100" step="0.01" required')+'</div><div class="actions"><button class="btn">บันทึกเกณฑ์ติดตาม</button></div></form><p class="small">ค่าตั้งต้น HI 5% และ CI 3% เป็นเพียงเกณฑ์ติดตามภายในตัวอย่าง ไม่ใช่มาตรฐานยืนยันการระบาด</p></div></div>'+
+'<div class="panel"><h3>ข้อมูลทะเบียนครัวเรือนเป้าหมาย</h3><p class="muted">ใช้คำนวณความครอบคลุมของการสำรวจ</p><div class="table-wrap"><table><thead><tr><th>หมู่บ้าน</th><th class="num">หลังคาเรือนเป้าหมาย</th></tr></thead><tbody>'+db.villages.map(function(v){return '<tr><td>ม.'+v.id+' '+safe(v.name)+'</td><td class="num"><input style="max-width:130px" type="number" min="1" data-houses="'+v.id+'" value="'+v.households+'"></td></tr>'}).join("")+'</tbody></table></div><div class="actions"><button class="btn" id="save-houses">บันทึกจำนวนหลังคาเรือน</button><button class="btn danger" id="reset">คืนค่าข้อมูลตั้งต้น</button></div></div>';
+$("backup").onclick=backup;$("csv").onclick=exportCSV;$("import").onclick=function(){$("importFile").click()};
+$("settings-form").onsubmit=function(e){e.preventDefault();var h=Number($("st-hi").value),c=Number($("st-ci").value);if(h<0||c<0||h>100||c>100)return alert("ค่าต้องอยู่ในช่วง 0–100");db.settings={hi:h,ci:c};save();render()};
+$("save-houses").onclick=function(){var inputs=document.querySelectorAll("[data-houses]"),vals={};for(var i=0;i<inputs.length;i++){var input=inputs[i],x=Number(input.value);if(!Number.isInteger(x)||x<1)return alert("กรุณาระบุจำนวนหลังคาเรือนให้ถูกต้อง");vals[input.dataset.houses]=x}db.villages.forEach(function(v){v.households=vals[v.id]});save();render();alert("บันทึกจำนวนหลังคาเรือนแล้ว")};
+$("reset").onclick=function(){if(confirm("คืนค่าข้อมูลทั้งหมด? รายการที่บันทึกเพิ่มเติมจะถูกลบ โปรดสำรอง JSON ก่อน")){db=starter();save();month="2026-09";render()}}}
+function csvCell(x){var v=String(x==null?"":x);if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}
+function download(name,contents,type){try{var b=new Blob([contents],{type:type}),url=URL.createObjectURL(b),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1000)}catch(e){alert("ดาวน์โหลดไม่สำเร็จ กรุณาลองเปิดใน Chrome หรือ Safari")}}
+function exportCSV(){var list=[["วันที่","หมู่ที่","หมู่บ้าน","จำนวนบ้านที่สำรวจ","จำนวนบ้านที่พบลูกน้ำ","HI (%)","จำนวนภาชนะที่สำรวจ","จำนวนภาชนะที่พบลูกน้ำ","CI (%)","บ้านเลขที่ที่พบลูกน้ำ","จุดเสี่ยงที่พบ","หมายเหตุ"]];
+db.surveys.forEach(function(r){list.push([r.date,r.village,vname(r.village),r.houses,r.positiveHouses,f(HI(r),2),r.containers,r.positiveContainers,f(CI(r),2),r.houseNumbers,r.riskPoints,r.note])});
+download("HuaiSo_HI_CI.csv","\ufeff"+list.map(function(row){return row.map(csvCell).join(",")}).join("\r\n"),"text/csv;charset=utf-8")}
+function backup(){download("HuaiSo_Backup_"+current()+".json",JSON.stringify(db,null,2),"application/json;charset=utf-8")}
+function validateImport(d){if(!d||!Array.isArray(d.surveys)||!Array.isArray(d.villages)||d.villages.length!==6)return false;return d.surveys.every(function(r){return validateSurvey(r)})}
+$("importFile").addEventListener("change",function(e){var file=e.target.files&&e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(){try{var d=JSON.parse(reader.result);if(!validateImport(d))throw Error("รูปแบบข้อมูลไม่ถูกต้อง");if(!confirm("นำเข้าไฟล์สำรองและแทนข้อมูลในเครื่องทั้งหมดหรือไม่?"))return;db=d;db.monthlyCases=db.monthlyCases||[];db.annualCases=db.annualCases||[];db.settings=db.settings||{hi:5,ci:3};db.surveys.forEach(function(r){r.houseNumbers=r.houseNumbers||"";r.riskPoints=r.riskPoints||"";r.note=r.note||""});save();month=months()[0]||"2026-09";render();alert("นำเข้าข้อมูลสำเร็จ")}catch(err){alert("ไม่สามารถนำเข้าข้อมูลได้: "+err.message)}};reader.readAsText(file,"utf-8");e.target.value=""});
+function show(p){page=p;document.querySelectorAll("main section").forEach(function(s){s.classList.toggle("hidden",s.id!==page)});document.querySelectorAll("nav button").forEach(function(b){b.classList.toggle("active",b.dataset.page===page)});render();window.scrollTo({top:0,behavior:"smooth"})}
+function render(){dashboard();renderSurvey();history();cases();report();settings()}
+document.querySelector("nav").addEventListener("click",function(e){var btn=e.target.closest("button[data-page]");if(btn)show(btn.dataset.page)});
+document.body.addEventListener("click",function(e){var btn=e.target.closest('button[data-page]');if(btn&&!btn.closest("nav"))show(btn.dataset.page)});
+load();month=months()[months().length-1]||"2026-09";show("dashboard");
+})();
+</script>
+</body>
+</html>
