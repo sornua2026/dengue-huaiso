@@ -39,6 +39,31 @@ footer{padding:13px;text-align:center;background:#e6eef1;color:#718a96;font-size
 @media(max-width:740px){main{padding:11px}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi{padding:12px}.kpi strong{font-size:23px}.grid{grid-template-columns:1fr}.panel{padding:13px}}
 @media(max-width:390px){.fields{grid-template-columns:1fr}.full{grid-column:auto}}
 @media print{header,nav,footer,.no-print,#login-panel{display:none!important}main{padding:0}.panel{break-inside:avoid;border:0}}
+
+/* HI/CI village comparison: uses live Firestore aggregates, no external chart library */
+.risk-panel{margin-top:14px}
+.risk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.risk-chart{min-width:0;padding:14px;border:1px solid #e1eaf0;border-radius:10px}
+.risk-chart h4{font-size:14px;margin:0 0 4px;color:#204359}
+.risk-chart p{margin:0 0 14px}
+.risk-row{display:grid;grid-template-columns:134px minmax(0,1fr) 94px;align-items:center;gap:9px;margin:10px 0}
+.risk-row-label{font-size:11px;line-height:1.45;font-weight:700;color:#395c70;overflow-wrap:anywhere}
+.risk-track{height:23px;border-radius:6px;background:#f0f4f6;position:relative;overflow:hidden}
+.risk-fill{height:100%;border-radius:5px;min-width:0}
+.risk-rule{position:absolute;top:0;height:100%;border-left:2px dashed #7d8f9a;opacity:.75;pointer-events:none}
+.risk-rule.high{border-left-color:#ba4147}
+.risk-score{text-align:right;line-height:1.25;font-variant-numeric:tabular-nums}
+.risk-score strong{font-size:13px;display:block}
+.risk-score small{font-size:10px;color:#6e8490;display:block}
+.risk-scale-note{font-size:11px;color:#627c89;margin-top:10px}
+.risk-legend{display:flex;gap:10px 16px;flex-wrap:wrap;font-size:11px;color:#496777;margin:10px 0}
+.risk-swatch{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+.risk-flags{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+.risk-flag{display:inline-block;border-radius:6px;background:#f6f8f9;border:1px solid #e1e8ed;padding:6px 9px;font-size:11px}
+.risk-panel .risk-foot{font-size:11px;color:#708693;line-height:1.7;margin:12px 0 2px}
+@media(max-width:1000px){.risk-grid{grid-template-columns:1fr}}
+@media(max-width:470px){.risk-row{grid-template-columns:91px minmax(0,1fr) 73px;gap:5px}.risk-row-label{font-size:10px}.risk-score strong{font-size:12px}.risk-score small{font-size:9px}.risk-chart{padding:10px}.risk-flags{gap:4px}}
+
 </style>
 </head>
 <body>
@@ -132,12 +157,70 @@ function sixVillageOverview(){
  });
  return '<div class="panel"><div class="flex"><h3>สรุปข้อมูลล่าสุดครบทั้ง 6 หมู่บ้าน (สำหรับแอดมิน)</h3><span class="tag">เชื่อมข้อมูลจาก Firestore</span></div><p class="muted">แสดงเดือนล่าสุดของแต่ละหมู่บ้านแยกกัน จึงไม่รวมค่าดัชนีจากคนละเดือนเข้าด้วยกัน</p><div class="wrap"><table><thead><tr><th>หมู่บ้าน</th><th>เดือนล่าสุด</th><th class="num">รายการสำรวจ</th><th class="num">HI</th><th class="num">CI</th></tr></thead><tbody>'+lines.join("")+'</tbody></table></div></div>';
 }
+
+function villageComparison(m){
+ const config={
+  HI:{label:"HI — House Index",unit:"บ้านที่พบลูกน้ำ ÷ บ้านสำรวจ",watch:5,high:10},
+  CI:{label:"CI — Container Index",unit:"ภาชนะที่พบลูกน้ำ ÷ ภาชนะสำรวจ",watch:1,high:5}
+ };
+ const rows=rowsOf(m);
+ const perVillage=V.map(v=>{
+   const rr=rows.filter(r=>r.village===v[0] && r.kind!=="followup");
+   const a=aggregate(rr);
+   return {id:v[0],name:v[1],entries:rr.length,HI:hi(a),CI:ci(a),houses:a.houses,containers:a.containers};
+ });
+ const palette={normal:"#21856c",watch:"#e4a126",high:"#c84c50",missing:"#a7b7c2"};
+ const category=(v,c)=>v==null?"missing":v>=c.high?"high":v>=c.watch?"watch":"normal";
+ const labels={normal:"ต่ำกว่าเกณฑ์",watch:"เฝ้าระวัง",high:"สูงกว่าเกณฑ์",missing:"ไม่มีข้อมูล"};
+ function one(kind){
+   const c=config[kind];
+   const values=perVillage.map(v=>v[kind]).filter(v=>v!==null);
+   const axisMax=Math.max(c.high*1.3,1,...values.map(v=>v*1.14));
+   const rule1=100*c.watch/axisMax,rule2=100*c.high/axisMax;
+   const rowsHTML=perVillage.map(v=>{
+     const value=v[kind],cat=category(value,c),color=palette[cat];
+     const width=value===null?0:Math.max(0,Math.min(100,100*value/axisMax));
+     const total=kind==="HI"?v.houses:v.containers;
+     return '<div class="risk-row" title="'+safe("ม."+v.id+" "+v.name+" | "+(value==null?"ยังไม่มีข้อมูล":kind+" "+num(value,2)+"%")+" | "+(total||0)+" ตัวอย่าง")+'">'+
+       '<div class="risk-row-label">ม.'+safe(v.id)+' '+safe(v.name)+'</div>'+
+       '<div class="risk-track" role="img" aria-label="'+safe("ม."+v.id+" "+kind+" "+(value==null?"ไม่มีข้อมูล":num(value,2)+" เปอร์เซ็นต์ "+labels[cat]))+'">'+
+       '<div class="risk-fill" style="width:'+width.toFixed(3)+'%;background:'+color+'"></div>'+
+       '<i class="risk-rule" style="left:'+rule1.toFixed(3)+'%"></i>'+
+       '<i class="risk-rule high" style="left:'+rule2.toFixed(3)+'%"></i>'+
+       '</div>'+
+       '<div class="risk-score"><strong style="color:'+color+'">'+(value==null?"—":num(value,2)+"%")+'</strong><small>'+labels[cat]+'</small></div></div>';
+   }).join("");
+   return '<div class="risk-chart"><h4>'+c.label+'</h4><p class="small">'+c.unit+' × 100</p>'+
+     rowsHTML+
+     '<div class="risk-scale-note">เส้นประ: เฝ้าระวังตั้งแต่ '+c.watch+'% · ระดับสูงตั้งแต่ '+c.high+'%</div>'+
+     '</div>';
+ }
+ const high=perVillage.filter(v=>category(v.HI,config.HI)==="high" || category(v.CI,config.CI)==="high");
+ const watch=perVillage.filter(v=>!high.includes(v)&&(category(v.HI,config.HI)==="watch"||category(v.CI,config.CI)==="watch"));
+ const missing=perVillage.filter(v=>v.HI===null||v.CI===null);
+ const flags=[
+  high.length?'<span class="risk-flag" style="color:#a4373d">ระดับสูง '+high.length+' หมู่บ้าน: '+high.map(v=>"ม."+v.id).join(", ")+'</span>':"",
+  watch.length?'<span class="risk-flag" style="color:#9a6417">เฝ้าระวัง '+watch.length+' หมู่บ้าน: '+watch.map(v=>"ม."+v.id).join(", ")+'</span>':"",
+  missing.length?'<span class="risk-flag">ยังไม่มีรายงาน '+missing.length+' หมู่บ้าน</span>':"",
+  !high.length&&!watch.length&&!missing.length?'<span class="risk-flag">ค่าดัชนีที่รายงานยังไม่ถึงเกณฑ์สีส้มหรือแดง</span>':""
+ ].filter(Boolean).join("");
+ return '<section class="panel risk-panel"><div class="flex"><div><h3>กราฟเปรียบเทียบ HI / CI ทั้ง 6 หมู่บ้าน</h3><p class="muted">รายเดือน'+safe(mLabel(m))+' · คำนวณยอดรวมจากผลสำรวจที่ส่งมาจริง</p></div><span class="tag">เฉพาะแอดมิน</span></div>'+
+ '<div class="risk-legend"><span><i class="risk-swatch" style="background:'+palette.normal+'"></i>ต่ำกว่าเกณฑ์สีส้ม</span>'+
+ '<span><i class="risk-swatch" style="background:'+palette.watch+'"></i>เฝ้าระวัง</span>'+
+ '<span><i class="risk-swatch" style="background:'+palette.high+'"></i>ระดับสูง</span>'+
+ '<span><i class="risk-swatch" style="background:'+palette.missing+'"></i>ยังไม่มีข้อมูล</span></div>'+
+ '<div class="risk-grid">'+one("HI")+one("CI")+'</div>'+
+ '<div class="risk-flags">'+flags+'</div>'+
+ '<p class="risk-foot">เกณฑ์สีเป็นเกณฑ์คัดกรองภายในเบื้องต้นสำหรับแสดงผล (HI: 5% และ 10%; CI: 1% และ 5%) ไม่ใช่เกณฑ์ทางการเพื่อยืนยันหรือทำนายการระบาด ต้องประเมินร่วมกับผู้ป่วย สถานการณ์ในพื้นที่ ความครอบคลุมการสำรวจ และมาตรการที่หน่วยงานกำหนด ค่า — หมายถึงยังไม่มีข้อมูล ไม่ใช่ 0%</p></section>';
+}
+
 function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Set(rr.map(r=>r.village)).size,den=villagesVisible().reduce((s,v)=>s+v[2],0),cov=pct(a.houses,den);
 const t=months().map(m=>{const b=aggregate(rowsOf(m));return {month:m,HI:hi(b),CI:ci(b)}});
 let alerts=[];if(reportedCount<villagesVisible().length)alerts.push("รายงานยังไม่ครบทุกหมู่บ้านที่ได้รับอนุญาต");rr.forEach(r=>{if(hi(r)>=5||ci(r)>=3)alerts.push("ม."+r.village+" "+name(r.village)+" มีค่า HI หรือ CI ถึงเกณฑ์ติดตามตัวอย่าง")});
 if(!alerts.length)alerts.push("ไม่พบสัญญาณตามเงื่อนไขติดตามตัวอย่าง ยังต้องเฝ้าระวังต่อเนื่อง");
 return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div><select id="month-select" style="width:auto;max-width:200px">'+months().map(m=>'<option value="'+m+'" '+(month===m?"selected":"")+'>เดือน'+mLabel(m)+'</option>').join("")+'</select></div>'+
 '<p class="muted">สถานะซิงก์: '+safe(syncState)+'</p><div class="kpis">'+[['House Index (HI)',num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
+ (admin()?villageComparison(month):'')+
 '<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
 '<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
 function survey(){const r=records.find(z=>z.id===editing),currentV=admin()?"1":vid();
