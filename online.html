@@ -115,7 +115,7 @@ label.photo-button{display:inline-flex;align-items:center;gap:6px;margin:0;borde
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, collection, query, where, onSnapshot, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, collection, query, where, onSnapshot, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
 
 const firebaseConfig={
  apiKey:"AIzaSyAyh-fma46XeH6gkzliVXRRdBdv6sQU8ZE",
@@ -403,14 +403,14 @@ function report(){const rr=rowsOf(month),a=aggregate(rr),risky=rr.filter(r=>r.ho
 '<h3 style="margin-top:20px">3. แนวทางติดตาม</h3><p>ให้ อสม. และเจ้าหน้าที่ติดตามจุดเสี่ยงและดำเนินมาตรการ 3 เก็บ ป้องกัน 3 โรค รวมทั้งตรวจสอบข้อมูลผู้ป่วยจากแหล่งรายงานทางการก่อนสรุปสถานการณ์</p></div>'}
 function settings(){return '<h2>ตั้งค่าและจัดการข้อมูล</h2><div class="panel"><h3>บัญชีผู้ใช้งาน</h3><p><b>อีเมล:</b> '+safe(me?.email||"")+'</p><p><b>บทบาท:</b> '+(admin()?"ผู้ดูแลระบบ":"อสม. หมู่ "+safe(vid()))+'</p><p><b>UID:</b> <code>'+safe(me?.uid||"")+'</code></p><div class="gap"><button class="btn" id="copy-uid">คัดลอก UID</button><button class="btn danger" id="logout">ออกจากระบบ</button></div></div>'+
 (admin()?'<div class="panel"><h3>นำเข้าข้อมูลพื้นฐานปี 2569</h3><p class="muted">ข้อมูล 6 หมู่บ้าน (HI 4.32%, CI 2.22%) ยังไม่ถูกนำเข้าฐานข้อมูลออนไลน์โดยอัตโนมัติ</p><div class="notice warn">ก่อนนำเข้า กรุณาตรวจสอบวันที่สำรวจที่ใช้เป็นตัวอย่าง (21 กันยายน 2569) และยืนยันว่าตัวเลขของแต่ละหมู่บ้านถูกต้อง</div><button class="btn primary" id="seed">นำเข้าข้อมูลพื้นฐาน 6 หมู่บ้าน</button></div>':"")+
-'<div class="panel"><h3>การสำรองข้อมูล</h3><p class="muted">ดาวน์โหลดเฉพาะข้อมูลที่บัญชีนี้ได้รับสิทธิให้เข้าถึง ไม่ควรเผยแพร่ไฟล์สำรองที่มีบ้านเลขที่ต่อสาธารณะ</p><button class="btn" id="backup">ดาวน์โหลดสำรอง JSON</button></div><div class="notice">หากต้องการสร้างบัญชี อสม. เพิ่ม ให้ผู้ดูแลสร้างใน Firebase Authentication แล้วเพิ่มเอกสาร users/{UID} ที่กำหนด role และ village โดยไม่ต้องให้ อสม. สมัครเอง</div>'}
+'<div class="panel"><h3>การสำรองข้อมูลครบชุด</h3><p class="muted">สำหรับแอดมิน: ดาวน์โหลดข้อมูลสำรวจ HI/CI ทั้ง 6 หมู่บ้าน ประวัติผู้ป่วย และภาพถ่ายจริงจาก Firestore รวมอยู่ในไฟล์ JSON เดียว ควรสำรองทุกเดือนและเก็บในพื้นที่ส่วนตัวที่ปลอดภัย</p><button class="btn" id="backup">ดาวน์โหลดสำรองข้อมูลครบรวมภาพ</button></div><div class="notice">หากต้องการสร้างบัญชี อสม. เพิ่ม ให้ผู้ดูแลสร้างใน Firebase Authentication แล้วเพิ่มเอกสาร users/{UID} ที่กำหนด role และ village โดยไม่ต้องให้ อสม. สมัครเอง</div>'}
 function render(){if(!profile||!me)return;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const html=page==="dashboard"?dashboard():page==="survey"?survey():page==="history"?history():page==="cases"&&admin()?renderCases():page==="report"?report():settings();$("view").innerHTML=html;bind()}
 function bind(){if(page==="dashboard"||page==="report")bindMonthPicker()
 if(page==="survey"){for(const id of ["houses","positiveHouses","containers","positiveContainers"])$(id).addEventListener("input",calculate);calculate();$("survey-form").onsubmit=saveSurvey;$("photoCamera").addEventListener("change",addPendingPhotos);$("photoGallery").addEventListener("change",addPendingPhotos);renderPendingPhotos();loadStoredPhotoThumbs(records.find(r=>r.id===editing)?.photos||[]);$("clear").onclick=()=>{clearPendingPhotos();editing=null;render()}}
 if(page==="history"){$("csv").onclick=downloadCsv;document.querySelectorAll("[data-photos]").forEach(b=>b.onclick=()=>{const r=records.find(x=>x.id===b.dataset.photos);if(r)openPhotoGallery(r)});document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{clearPendingPhotos();editing=b.dataset.edit;page="survey";render()});document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteSurvey(b.dataset.del))}
 if(page==="cases"&&admin())$("case-form").onsubmit=saveCase;
 if(page==="report")$("print").onclick=()=>window.print();
-if(page==="settings"){$("copy-uid").onclick=()=>navigator.clipboard.writeText(me.uid).then(()=>alert("คัดลอก UID แล้ว"));$("logout").onclick=()=>signOut(auth);$("backup").onclick=()=>download("HuaiSo_online_backup.json",JSON.stringify({surveys:records,cases:admin()?cases:[]},null,2),"application/json");if(admin())$("seed").onclick=importBaseline}}
+if(page==="settings"){$("copy-uid").onclick=()=>navigator.clipboard.writeText(me.uid).then(()=>alert("คัดลอก UID แล้ว"));$("logout").onclick=()=>signOut(auth);$("backup").onclick=backupAllData;if(admin())$("seed").onclick=importBaseline}}
 function calculate(){const h=Number($("houses").value),hp=Number($("positiveHouses").value),c=Number($("containers").value),cp=Number($("positiveContainers").value);$("calculated").textContent="คำนวณอัตโนมัติ: HI "+num(pct(hp,h),2)+"% | CI "+num(pct(cp,c),2)+"%"}
 function readForm(){const date=$("date").value;return {month:date.slice(0,7),date:date,village:$("village").value,houses:Number($("houses").value),positiveHouses:Number($("positiveHouses").value),containers:Number($("containers").value),positiveContainers:Number($("positiveContainers").value),houseNumbers:$("houseNumbers").value.trim(),riskPoints:$("riskPoints").value.trim(),note:$("note").value.trim(),updatedAt:serverTimestamp(),updatedBy:me.uid}}
 async function saveSurvey(e){
@@ -461,6 +461,41 @@ try{await setDoc(doc(db,"cases",month+"_"+village),{month,date,village,count,not
 async function importBaseline(){if(!admin())return;if(!confirm("ตรวจสอบวันที่และข้อมูลปี 2569 แล้ว และต้องการนำเข้าข้อมูลพื้นฐาน 6 หมู่บ้านที่ยังไม่มีอยู่ใน Firestore หรือไม่?"))return;let created=0,skipped=0;for(const b of BASE){const id="2026-09_"+b[0];try{const ref=doc(db,"surveys",id),existing=await getDoc(ref);if(existing.exists()){skipped++;continue}await setDoc(ref,{month:"2026-09",date:"2026-09-21",village:b[0],houses:b[1],positiveHouses:b[2],containers:b[3],positiveContainers:b[4],houseNumbers:"",riskPoints:"",note:"ข้อมูลตั้งต้น 2569: โปรดตรวจสอบวันที่สำรวจ",updatedAt:serverTimestamp(),updatedBy:me.uid});created++}catch(e){alert("นำเข้าข้อมูล ม."+b[0]+" ไม่สำเร็จ: "+e.message);break}}alert("นำเข้าใหม่ "+created+" รายการ ข้ามรายการที่มีอยู่แล้ว "+skipped+" รายการ")}
 function csvCell(x){let s=String(x??"");if(/^[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
 function downloadCsv(){const a=[["เดือน","วันที่","หมู่บ้าน","บ้านสำรวจ","จำนวนบ้านที่พบลูกน้ำ","HI","ภาชนะสำรวจ","จำนวนภาชนะที่พบลูกน้ำ","CI","บ้านเลขที่ที่พบลูกน้ำ","จุดเสี่ยงที่พบ","หมายเหตุ"]];records.forEach(r=>a.push([r.month,r.date,r.village,r.houses,r.positiveHouses,num(hi(r),2),r.containers,r.positiveContainers,num(ci(r),2),r.houseNumbers,r.riskPoints,r.note]));download("HuaiSo_HI_CI_online.csv","\uFEFF"+a.map(z=>z.map(csvCell).join(",")).join("\r\n"),"text/csv;charset=utf-8")}
+async function backupAllData(){
+ if(!admin()){alert("เฉพาะผู้ดูแลระบบเท่านั้นที่สำรองข้อมูลทั้งหมดได้");return}
+ const btn=$("backup"),oldText=btn.textContent;btn.disabled=true;btn.textContent="กำลังสำรองข้อมูลและภาพถ่าย…";
+ try{
+  const [surveySnap,caseSnap,photoSnap]=await Promise.all([
+   getDocs(collection(db,"surveys")),
+   getDocs(collection(db,"cases")),
+   getDocs(collection(db,"surveyPhotos"))
+  ]);
+  const surveys=surveySnap.docs.map(d=>({id:d.id,...d.data()}));
+  const casesData=caseSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const photos=photoSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const payload={
+   format:"huaiso-dengue-full-backup",
+   schemaVersion:1,
+   projectId:"huaiso-dengue",
+   exportedAt:new Date().toISOString(),
+   exportedBy:me.uid,
+   counts:{surveys:surveys.length,cases:casesData.length,photos:photos.length},
+   surveys:surveys,
+   cases:casesData,
+   photos:photos
+  };
+  const json=JSON.stringify(payload);
+  const sizeMB=(new Blob([json]).size/1024/1024).toFixed(2);
+  const stamp=new Date().toISOString().replace(/[:.]/g,"-");
+  download("HuaiSo_full_backup_"+stamp+".json",json,"application/json;charset=utf-8");
+  note("สำรองข้อมูลครบแล้ว · สำรวจ "+surveys.length+" รายการ · ผู้ป่วย "+casesData.length+" รายการ · ภาพ "+photos.length+" ภาพ");
+  alert("สำรองข้อมูลสำเร็จ\\nผลสำรวจ: "+surveys.length+" รายการ\\nข้อมูลผู้ป่วย: "+casesData.length+" รายการ\\nภาพถ่าย: "+photos.length+" ภาพ\\nขนาดไฟล์ประมาณ "+sizeMB+" MB\\nโปรดเก็บไฟล์ไว้ในพื้นที่ส่วนตัวที่ปลอดภัย");
+ }catch(e){
+  alert("สำรองข้อมูลไม่สำเร็จ: "+(e.code||e.message)+"\\nตรวจสอบสิทธิ์แอดมินและการเชื่อมต่อ แล้วลองใหม่");
+ }finally{
+  if(btn.isConnected){btn.disabled=false;btn.textContent=oldText}
+ }
+}
 function download(name,body,type){const url=URL.createObjectURL(new Blob([body],{type})),el=document.createElement("a");el.href=url;el.download=name;document.body.append(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 </script>
 </body>
