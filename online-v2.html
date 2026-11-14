@@ -116,17 +116,16 @@ label.photo-button{display:inline-flex;align-items:center;gap:6px;margin:0;borde
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, query, where, onSnapshot, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-storage.js";
+
 const firebaseConfig={
  apiKey:"AIzaSyAyh-fma46XeH6gkzliVXRRdBdv6sQU8ZE",
  authDomain:"huaiso-dengue.firebaseapp.com",
  projectId:"huaiso-dengue",
- storageBucket:"huaiso-dengue.firebasestorage.app",
  messagingSenderId:"876883545606",
  appId:"1:876883545606:web:c5e18785990412ebe9bd87",
  measurementId:"G-ZPQE2WVBMD"
 };
-const fb=initializeApp(firebaseConfig),auth=getAuth(fb),db=getFirestore(fb),storage=getStorage(fb);
+const fb=initializeApp(firebaseConfig),auth=getAuth(fb),db=getFirestore(fb);
 const $=id=>document.getElementById(id);
 const V=[["1","บ้านห้วยซ้อเหนือ",336],["2","บ้านซ้อใต้",209],["12","บ้านร้องหัวฝาย",147],["16","บ้านชัยพัฒนา",248],["18","บ้านพัฒนารุ่งเรือง",203],["19","บ้านเกษตรสมบูรณ์",171]];
 const BASE=[["1",296,15,913,20],["2",185,11,863,17],["12",118,5,567,17],["16",211,7,687,16],["18",190,5,487,10],["19",157,7,574,11]];
@@ -286,7 +285,9 @@ return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระ
 '<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
 '<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
 
+
 const PHOTO_LIMIT=5;
+const PHOTO_DOC_LIMIT=680000;
 let pendingPhotoFiles=[],pendingPhotoUrls=[];
 function photoCategoryLabel(category){
  return ({risk:"พบจุดเสี่ยง / ลูกน้ำ",survey:"การสำรวจครัวเรือน",campaign:"กิจกรรมรณรงค์",other:"กิจกรรมอื่น ๆ"})[category]||"ภาพประกอบ";
@@ -294,7 +295,7 @@ function photoCategoryLabel(category){
 function photoSection(record){
  const photos=Array.isArray(record?.photos)?record.photos:[];
  return '<div class="full photo-box"><label>ภาพถ่ายประกอบการสำรวจ / กิจกรรม</label>'+
- '<p class="small">แนบได้ไม่เกิน '+PHOTO_LIMIT+' ภาพต่อรายการ · ถ่ายจากกล้องหรือเลือกรูปในมือถือ · ระบบย่อภาพก่อนส่ง</p>'+
+ '<p class="small">แนบได้ไม่เกิน '+PHOTO_LIMIT+' ภาพต่อรายการ · ถ่ายจากกล้องหรือเลือกรูปในมือถือ · ย่อภาพและจัดเก็บใน Firestore โดยตรง</p>'+
  '<div class="photo-grid" id="existing-photo-list">'+(photos.length?photos.map((p,i)=>'<div class="photo-card"><div class="photo-image" id="stored-photo-'+i+'">กำลังโหลดภาพ...</div><small>'+safe(photoCategoryLabel(p.category))+'</small><p>'+safe(p.caption||"")+'</p></div>').join(""):'<p class="muted">ยังไม่มีภาพแนบในรายการนี้</p>')+'</div>'+
  '<div class="fields" style="margin-top:12px"><div><label for="photoCategory">ประเภทภาพที่จะเพิ่ม</label><select id="photoCategory"><option value="risk">พบจุดเสี่ยง / ลูกน้ำยุงลาย</option><option value="survey">การสำรวจครัวเรือน</option><option value="campaign">กิจกรรมรณรงค์</option><option value="other">กิจกรรมอื่น ๆ</option></select></div><div><label for="photoCaption">คำอธิบายภาพ (ถ้ามี)</label><input id="photoCaption" maxlength="150" placeholder="เช่น พบภาชนะน้ำขังหลังบ้าน"></div></div>'+
  '<div class="photo-actions"><input class="photo-file-input" id="photoCamera" type="file" accept="image/*" capture="environment"><label class="photo-button" for="photoCamera">ถ่ายภาพด้วยกล้อง</label><input class="photo-file-input" id="photoGallery" type="file" accept="image/*" multiple><label class="photo-button" for="photoGallery">เลือกรูปจากเครื่อง</label></div>'+
@@ -332,24 +333,34 @@ async function compressPhoto(file){
  let bitmap;
  try{bitmap=await createImageBitmap(file)}catch(e){throw new Error("เปิดรูปนี้ไม่ได้ กรุณาเลือกรูป JPG, PNG หรือ WebP")}
  try{
-  const maxSide=1600,scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
-  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
-  for(const quality of [.78,.66,.55]){
-   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
-   if(blob&&blob.size<=4.8*1024*1024)return blob;
+  for(const maxSide of [1100,900,760]){
+   const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement("canvas");
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+   canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   const context=canvas.getContext("2d");
+   if(!context)throw new Error("ไม่สามารถเตรียมภาพเพื่อบันทึกได้");
+   context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+   for(const quality of [.62,.52,.42,.32]){
+    const dataUrl=canvas.toDataURL("image/jpeg",quality);
+    if(dataUrl.length<=PHOTO_DOC_LIMIT)return dataUrl;
+   }
   }
-  throw new Error("ภาพมีขนาดใหญ่เกินไปหลังย่อ กรุณาเลือกภาพอื่น");
+  throw new Error("ภาพยังมีขนาดใหญ่เกินกำหนดหลังย่อ กรุณาเลือกภาพอื่น");
  }finally{if(bitmap.close)bitmap.close()}
 }
 async function loadStoredPhotoThumbs(photos){
  for(let i=0;i<photos.length;i++){
   const target=$("stored-photo-"+i);if(!target)continue;
   try{
-   const url=await getDownloadURL(storageRef(storage,photos[i].path));
-   const img=document.createElement("img");img.src=url;img.alt=photoCategoryLabel(photos[i].category);img.loading="lazy";
+   if(!photos[i].id)throw new Error("ไม่พบรหัสภาพ");
+   const snap=await getDoc(doc(db,"surveyPhotos",photos[i].id));
+   if(!snap.exists())throw new Error("ไม่พบภาพในฐานข้อมูล");
+   const data=snap.data();
+   if(typeof data.imageData!=="string")throw new Error("ข้อมูลภาพไม่สมบูรณ์");
+   const img=document.createElement("img");img.src=data.imageData;img.alt=photoCategoryLabel(photos[i].category);img.loading="lazy";
    target.replaceChildren(img);
-  }catch(e){target.textContent="เปิดภาพไม่ได้ · "+(e.code||"ตรวจสอบสิทธิหรือ Storage Rules")}
+  }catch(e){target.textContent="เปิดภาพไม่ได้ · "+(e.code||e.message)}
  }
 }
 async function openPhotoGallery(record){
@@ -363,8 +374,14 @@ async function openPhotoGallery(record){
  const grid=overlay.querySelector("#photo-gallery-grid");grid.innerHTML="";
  for(const photo of photos){
   const card=document.createElement("figure"),caption=document.createElement("figcaption");
-  try{const url=await getDownloadURL(storageRef(storage,photo.path));const img=document.createElement("img");img.src=url;img.alt=photoCategoryLabel(photo.category);img.loading="lazy";card.append(img)}
-  catch(e){const error=document.createElement("p");error.textContent="ไม่สามารถเปิดภาพได้: "+(e.code||e.message);card.append(error)}
+  try{
+   if(!photo.id)throw new Error("ไม่พบรหัสภาพ");
+   const snap=await getDoc(doc(db,"surveyPhotos",photo.id));
+   if(!snap.exists())throw new Error("ไม่พบภาพในฐานข้อมูล");
+   const data=snap.data();
+   if(data.village!==record.village||data.surveyId!==record.id)throw new Error("ข้อมูลภาพไม่ตรงกับรายการสำรวจ");
+   const img=document.createElement("img");img.src=data.imageData;img.alt=photoCategoryLabel(photo.category);img.loading="lazy";card.append(img);
+  }catch(e){const error=document.createElement("p");error.textContent="ไม่สามารถเปิดภาพได้: "+(e.code||e.message);card.append(error)}
   caption.textContent=[photoCategoryLabel(photo.category),photo.caption||""].filter(Boolean).join(" · ");
   card.append(caption);grid.append(card);
  }
@@ -408,29 +425,40 @@ async function saveSurvey(e){
  const previous=editing?records.find(x=>x.id===editing):null;
  r.photos=Array.isArray(previous?.photos)?[...previous.photos]:[];
  if(r.photos.length+pendingPhotoFiles.length>PHOTO_LIMIT){alert("แนบภาพได้ไม่เกิน "+PHOTO_LIMIT+" ภาพต่อรายการ");return}
- const btn=document.querySelector("#survey-form button[type=submit]"),oldLabel=btn.textContent,uploadedPaths=[];
+ const btn=document.querySelector("#survey-form button[type=submit]"),oldLabel=btn.textContent,uploadedPhotoIds=[];
  btn.disabled=true;
  try{
   const category=$("photoCategory").value,caption=$("photoCaption").value.trim();
   for(let i=0;i<pendingPhotoFiles.length;i++){
-   btn.textContent="กำลังย่อและอัปโหลดภาพ "+(i+1)+"/"+pendingPhotoFiles.length+"…";
-   const blob=await compressPhoto(pendingPhotoFiles[i]);
-   const fileName=Date.now()+"_"+Math.random().toString(36).slice(2,9)+".jpg";
-   const path="surveyPhotos/"+r.village+"/"+id+"/"+me.uid+"/"+fileName;
-   await uploadBytes(storageRef(storage,path),blob,{contentType:"image/jpeg",customMetadata:{category:category,caption:caption,uploadedBy:me.uid}});
-   uploadedPaths.push(path);
-   r.photos.push({path:path,category:category,caption:caption,uploadedBy:me.uid,uploadedAt:new Date().toISOString()});
+   btn.textContent="กำลังย่อและบันทึกภาพ "+(i+1)+"/"+pendingPhotoFiles.length+"…";
+   const imageData=await compressPhoto(pendingPhotoFiles[i]);
+   const photoId=id+"_"+me.uid+"_"+Date.now()+"_"+Math.random().toString(36).slice(2,8);
+   await setDoc(doc(db,"surveyPhotos",photoId),{
+    surveyId:id,month:r.month,date:r.date,village:r.village,
+    category:category,caption:caption,imageData:imageData,
+    uploadedBy:me.uid,createdAt:serverTimestamp()
+   });
+   uploadedPhotoIds.push(photoId);
+   r.photos.push({id:photoId,category:category,caption:caption,uploadedBy:me.uid,uploadedAt:new Date().toISOString()});
   }
   btn.textContent="กำลังบันทึกผลสำรวจ…";
   await setDoc(doc(db,"surveys",id),r);
-  clearPendingPhotos();editing=null;month=r.month;page="history";render();note("บันทึกข้อมูลสำรวจและภาพถ่ายออนไลน์สำเร็จ");
+  clearPendingPhotos();editing=null;month=r.month;page="history";render();note("บันทึกผลสำรวจและภาพถ่ายใน Firestore สำเร็จ");
  }catch(err){
-  await Promise.all(uploadedPaths.map(path=>deleteObject(storageRef(storage,path)).catch(()=>null)));
-  alert("บันทึกไม่สำเร็จ: "+(err.code||err.message)+"\nหากเป็นการแนบภาพ โปรดตรวจสอบว่าเปิดใช้ Firebase Storage และเผยแพร่ Storage Rules แล้ว");
+  await Promise.all(uploadedPhotoIds.map(photoId=>deleteDoc(doc(db,"surveyPhotos",photoId)).catch(()=>null)));
+  alert("บันทึกไม่สำเร็จ: "+(err.code||err.message)+"\nโปรดตรวจสอบ Firestore Rules และพื้นที่โควตาฟรีของ Firestore");
  }finally{if(btn.isConnected){btn.disabled=false;btn.textContent=oldLabel}}
 }
 
-async function deleteSurvey(id){if(!admin()||!confirm("ต้องการลบรายการสำรวจนี้หรือไม่? ภาพถ่ายที่แนบจะถูกลบด้วย"))return;try{const record=records.find(r=>r.id===id);await deleteDoc(doc(db,"surveys",id));if(record?.photos?.length)await Promise.all(record.photos.map(p=>deleteObject(storageRef(storage,p.path)).catch(()=>null)));note("ลบข้อมูลและภาพถ่ายที่แนบแล้ว")}catch(e){alert(e.message)}}
+async function deleteSurvey(id){
+ if(!admin()||!confirm("ต้องการลบรายการสำรวจนี้หรือไม่? ภาพถ่ายที่แนบจะถูกลบด้วย"))return;
+ try{
+  const record=records.find(r=>r.id===id);
+  await deleteDoc(doc(db,"surveys",id));
+  if(record?.photos?.length)await Promise.all(record.photos.filter(p=>p.id).map(p=>deleteDoc(doc(db,"surveyPhotos",p.id)).catch(()=>null)));
+  note("ลบข้อมูลและภาพถ่ายที่แนบแล้ว");
+ }catch(e){alert(e.code||e.message)}
+}
 async function saveCase(e){e.preventDefault();if(!admin())return;const date=$("caseDate").value,month=date.slice(0,7),village=$("village").value,count=Number($("count").value),noteText=$("caseNote").value.trim();
 if(!date||!Number.isInteger(count)||count<0)return alert("กรุณากรอกจำนวนผู้ป่วยที่ถูกต้อง");
 try{await setDoc(doc(db,"cases",month+"_"+village),{month,date,village,count,note:noteText,updatedAt:serverTimestamp(),updatedBy:me.uid});note("บันทึกจำนวนผู้ป่วยออนไลน์แล้ว")}catch(err){alert("บันทึกไม่สำเร็จ: "+err.message)}}
