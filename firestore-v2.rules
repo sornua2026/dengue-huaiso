@@ -1,7 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function profilePath() {
       return /databases/$(database)/documents/users/$(request.auth.uid);
     }
@@ -22,7 +21,6 @@ service cloud.firestore {
     function canEditVillage(villageId) {
       return admin() || (villageWorker() && assignedVillage() == villageId);
     }
-
     function validSurvey(x, id) {
       return x.keys().hasAll([
           "month","date","village","houses","positiveHouses",
@@ -53,33 +51,7 @@ service cloud.firestore {
         && x.updatedAt == request.time
         && x.updatedBy == request.auth.uid;
     }
-
-    // ผู้ใช้ทั่วไปอ่านโปรไฟล์ตนเองได้ แต่แก้สิทธิเองไม่ได้
-    match /users/{userId} {
-      allow get: if request.auth != null
-        && (request.auth.uid == userId || admin());
-      allow list, create, update, delete: if admin();
-    }
-
-    match /surveys/{surveyId} {
-      // เมื่อใช้ query ฝั่ง อสม. ต้องใส่ where("village","==",assignedVillage)
-      allow get, list: if admin()
-        || (villageWorker() && resource.data.village == assignedVillage());
-
-      allow create: if allowedUser()
-        && canEditVillage(request.resource.data.village)
-        && validSurvey(request.resource.data, surveyId);
-
-      allow update: if allowedUser()
-        && canEditVillage(resource.data.village)
-        && request.resource.data.village == resource.data.village
-        && request.resource.data.month == resource.data.month
-        && validSurvey(request.resource.data, surveyId);
-
-      allow delete: if admin();
-    }
-
-    function validPhoto(x, id) {
+    function validPhoto(x) {
       return x.keys().hasAll([
           "surveyId","month","date","village","category",
           "caption","imageData","uploadedBy","createdAt"
@@ -90,95 +62,19 @@ service cloud.firestore {
         ])
         && x.surveyId is string
         && x.month is string
-        && x.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])
-      return x.keys().hasAll([
-          "month","date","village","count","note","updatedAt","updatedBy"
-        ])
-        && x.keys().hasOnly([
-          "month","date","village","count","note","updatedAt","updatedBy"
-        ])
-        && x.month is string
         && x.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
         && x.date is string
         && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]$')
-        && x.village in ["1","2","12","16","18","19"]
-        && id == x.month + "_" + x.village
-        && x.count is int && x.count >= 0 && x.count <= 10000
-        && x.note is string && x.note.size() <= 1000
-        && x.updatedAt == request.time
-        && x.updatedBy == request.auth.uid;
-    }
-
-    match /cases/{caseId} {
-      allow get, list: if admin();
-      allow create, update: if admin()
-        && validCase(request.resource.data, caseId);
-      allow delete: if admin();
-    }
-
-    match /{path=**} {
-      allow read, write: if false;
-    }
-  }
-})
-        && x.date is string
-        && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]
-      return x.keys().hasAll([
-          "month","date","village","count","note","updatedAt","updatedBy"
-        ])
-        && x.keys().hasOnly([
-          "month","date","village","count","note","updatedAt","updatedBy"
-        ])
-        && x.month is string
-        && x.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
-        && x.date is string
-        && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]$')
-        && x.village in ["1","2","12","16","18","19"]
-        && id == x.month + "_" + x.village
-        && x.count is int && x.count >= 0 && x.count <= 10000
-        && x.note is string && x.note.size() <= 1000
-        && x.updatedAt == request.time
-        && x.updatedBy == request.auth.uid;
-    }
-
-    match /cases/{caseId} {
-      allow get, list: if admin();
-      allow create, update: if admin()
-        && validCase(request.resource.data, caseId);
-      allow delete: if admin();
-    }
-
-    match /{path=**} {
-      allow read, write: if false;
-    }
-  }
-})
         && x.village in ["1","2","12","16","18","19"]
         && x.surveyId == x.month + "_" + x.village
         && x.category in ["risk","survey","campaign","other"]
         && x.caption is string && x.caption.size() <= 150
-        && x.imageData is string && x.imageData.size() <= 680000
+        && x.imageData is string
+        && x.imageData.matches('^data:image/jpeg;base64,[A-Za-z0-9+/=]+$')
+        && x.imageData.size() <= 680000
         && x.uploadedBy == request.auth.uid
         && x.createdAt == request.time;
     }
-
-    // เก็บภาพแบบย่อใน Firestore เพื่อใช้โควตาฟรี โดยแยก 1 ภาพต่อ 1 เอกสาร
-    match /surveyPhotos/{photoId} {
-      allow get, list: if admin()
-        || (villageWorker() && resource.data.village == assignedVillage());
-
-      allow create: if allowedUser()
-        && canEditVillage(request.resource.data.village)
-        && validPhoto(request.resource.data, photoId);
-
-      allow update: if false;
-
-      allow delete: if admin()
-        || (villageWorker()
-            && resource.data.village == assignedVillage()
-            && resource.data.uploadedBy == request.auth.uid);
-    }
-
     function validCase(x, id) {
       return x.keys().hasAll([
           "month","date","village","count","note","updatedAt","updatedBy"
@@ -197,14 +93,42 @@ service cloud.firestore {
         && x.updatedAt == request.time
         && x.updatedBy == request.auth.uid;
     }
-
+    match /users/{userId} {
+      allow get: if request.auth != null
+        && (request.auth.uid == userId || admin());
+      allow list, create, update, delete: if admin();
+    }
+    match /surveys/{surveyId} {
+      allow get, list: if admin()
+        || (villageWorker() && resource.data.village == assignedVillage());
+      allow create: if allowedUser()
+        && canEditVillage(request.resource.data.village)
+        && validSurvey(request.resource.data, surveyId);
+      allow update: if allowedUser()
+        && canEditVillage(resource.data.village)
+        && request.resource.data.village == resource.data.village
+        && request.resource.data.month == resource.data.month
+        && validSurvey(request.resource.data, surveyId);
+      allow delete: if admin();
+    }
+    match /surveyPhotos/{photoId} {
+      allow get, list: if admin()
+        || (villageWorker() && resource.data.village == assignedVillage());
+      allow create: if allowedUser()
+        && canEditVillage(request.resource.data.village)
+        && validPhoto(request.resource.data);
+      allow update: if false;
+      allow delete: if admin()
+        || (villageWorker()
+            && resource.data.village == assignedVillage()
+            && resource.data.uploadedBy == request.auth.uid);
+    }
     match /cases/{caseId} {
       allow get, list: if admin();
       allow create, update: if admin()
         && validCase(request.resource.data, caseId);
       allow delete: if admin();
     }
-
     match /{path=**} {
       allow read, write: if false;
     }
