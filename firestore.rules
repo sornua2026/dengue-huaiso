@@ -27,7 +27,7 @@ service cloud.firestore {
       return x.keys().hasAll([
           "month","date","village","houses","positiveHouses",
           "containers","positiveContainers","houseNumbers",
-          "riskPoints","note","updatedAt","updatedBy"
+          "riskPoints","note","updatedAt","updatedBy","photos"
         ])
         && x.keys().hasOnly([
           "month","date","village","houses","positiveHouses",
@@ -49,6 +49,7 @@ service cloud.firestore {
         && x.houseNumbers is string && x.houseNumbers.size() <= 1200
         && x.riskPoints is string && x.riskPoints.size() <= 2000
         && x.note is string && x.note.size() <= 2000
+        && (!x.keys().hasAny(["photos"]) || (x.photos is list && x.photos.size() <= 5))
         && x.updatedAt == request.time
         && x.updatedBy == request.auth.uid;
     }
