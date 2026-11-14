@@ -27,12 +27,12 @@ service cloud.firestore {
       return x.keys().hasAll([
           "month","date","village","houses","positiveHouses",
           "containers","positiveContainers","houseNumbers",
-          "riskPoints","note","updatedAt","updatedBy","photos"
+          "riskPoints","note","updatedAt","updatedBy"
         ])
         && x.keys().hasOnly([
           "month","date","village","houses","positiveHouses",
           "containers","positiveContainers","houseNumbers",
-          "riskPoints","note","updatedAt","updatedBy"
+          "riskPoints","note","updatedAt","updatedBy","photos"
         ])
         && x.month is string
         && x.month.matches('^[0-9]{4}-(0[1-9]|1[0-2])$')
