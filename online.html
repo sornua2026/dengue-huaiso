@@ -465,24 +465,27 @@ async function backupAllData(){
  if(!admin()){alert("เฉพาะผู้ดูแลระบบเท่านั้นที่สำรองข้อมูลทั้งหมดได้");return}
  const btn=$("backup"),oldText=btn.textContent;btn.disabled=true;btn.textContent="กำลังสำรองข้อมูลและภาพถ่าย…";
  try{
-  const [surveySnap,caseSnap,photoSnap]=await Promise.all([
+  const [surveySnap,caseSnap,photoSnap,userSnap]=await Promise.all([
    getDocs(collection(db,"surveys")),
    getDocs(collection(db,"cases")),
-   getDocs(collection(db,"surveyPhotos"))
+   getDocs(collection(db,"surveyPhotos")),
+   getDocs(collection(db,"users"))
   ]);
   const surveys=surveySnap.docs.map(d=>({id:d.id,...d.data()}));
   const casesData=caseSnap.docs.map(d=>({id:d.id,...d.data()}));
   const photos=photoSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const userProfiles=userSnap.docs.map(d=>({id:d.id,...d.data()}));
   const payload={
    format:"huaiso-dengue-full-backup",
    schemaVersion:1,
    projectId:"huaiso-dengue",
    exportedAt:new Date().toISOString(),
    exportedBy:me.uid,
-   counts:{surveys:surveys.length,cases:casesData.length,photos:photos.length},
+   counts:{surveys:surveys.length,cases:casesData.length,photos:photos.length,userProfiles:userProfiles.length},
    surveys:surveys,
    cases:casesData,
-   photos:photos
+   photos:photos,
+   userProfiles:userProfiles
   };
   const json=JSON.stringify(payload);
   const sizeMB=(new Blob([json]).size/1024/1024).toFixed(2);
