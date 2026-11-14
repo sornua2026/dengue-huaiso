@@ -72,6 +72,27 @@ footer{padding:13px;text-align:center;background:#e6eef1;color:#718a96;font-size
 @media(max-width:560px){.month-tools{width:100%}.month-tools input[type="month"]{width:100%;flex:1 1 130px}.month-tools label{width:100%}}
 @media print{.month-tools{display:none!important}}
 
+
+/* Photo evidence upload and gallery */
+.photo-box{border:1px solid #dce8ea;border-radius:10px;padding:12px;background:#fbfdfd}
+.photo-actions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.photo-file-input{display:none}
+label.photo-button{display:inline-flex;align-items:center;gap:6px;margin:0;border:1px solid #c5d8dc;border-radius:8px;padding:9px 12px;background:#fff;color:#295d6a;font-weight:750;font-size:12px;cursor:pointer}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px;margin-top:10px}
+.photo-card{min-width:0;border:1px solid #e1e9ec;border-radius:9px;padding:7px;background:#fff}
+.photo-image{height:104px;border-radius:6px;background:#edf3f5;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#718894;font-size:11px}
+.photo-image img,.photo-card img{width:100%;height:100%;object-fit:cover}
+.photo-card small{display:block;color:#587481;font-size:10px;margin-top:6px}
+.photo-card p{font-size:10px;color:#6b808a;white-space:normal;overflow-wrap:anywhere;margin:3px 0}
+.photo-modal{position:fixed;inset:0;z-index:9999;background:#102b36cc;display:flex;align-items:center;justify-content:center;padding:14px}
+.photo-modal-inner{width:min(900px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:14px;padding:15px}
+.photo-modal .photo-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+.photo-modal figure{margin:0;border:1px solid #dce8ea;border-radius:9px;padding:8px}
+.photo-modal figure img{width:100%;height:190px;object-fit:contain;background:#edf3f5;border-radius:6px}
+.photo-modal figcaption{font-size:11px;color:#526f7b;margin-top:6px;white-space:normal}
+@media(max-width:480px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-modal{padding:7px}.photo-modal-inner{padding:10px}}
+@media print{.photo-actions,.photo-file-input{display:none!important}}
+
 </style>
 </head>
 <body>
@@ -95,6 +116,7 @@ footer{padding:13px;text-align:center;background:#e6eef1;color:#718a96;font-size
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, collection, query, where, onSnapshot, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-storage.js";
 const firebaseConfig={
  apiKey:"AIzaSyAyh-fma46XeH6gkzliVXRRdBdv6sQU8ZE",
  authDomain:"huaiso-dengue.firebaseapp.com",
@@ -104,7 +126,7 @@ const firebaseConfig={
  appId:"1:876883545606:web:c5e18785990412ebe9bd87",
  measurementId:"G-ZPQE2WVBMD"
 };
-const fb=initializeApp(firebaseConfig),auth=getAuth(fb),db=getFirestore(fb);
+const fb=initializeApp(firebaseConfig),auth=getAuth(fb),db=getFirestore(fb),storage=getStorage(fb);
 const $=id=>document.getElementById(id);
 const V=[["1","บ้านห้วยซ้อเหนือ",336],["2","บ้านซ้อใต้",209],["12","บ้านร้องหัวฝาย",147],["16","บ้านชัยพัฒนา",248],["18","บ้านพัฒนารุ่งเรือง",203],["19","บ้านเกษตรสมบูรณ์",171]];
 const BASE=[["1",296,15,913,20],["2",185,11,863,17],["12",118,5,567,17],["16",211,7,687,16],["18",190,5,487,10],["19",157,7,574,11]];
@@ -145,7 +167,7 @@ onAuthStateChanged(auth,async user=>{
 });
 $("login-form").addEventListener("submit",async e=>{e.preventDefault();$("login-note").textContent="กำลังเข้าสู่ระบบ…";try{await setPersistence(auth,browserSessionPersistence);await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);$("password").value=""}catch(err){$("login-note").textContent="เข้าสู่ระบบไม่สำเร็จ: "+(err.code||err.message)}});
 $("reset-pass").onclick=async()=>{const email=$("email").value.trim();if(!email)return alert("กรอกอีเมลของบัญชีที่ได้รับอนุญาตก่อน");try{await sendPasswordResetEmail(auth,email);alert("หากบัญชีรองรับการรีเซ็ตรหัสผ่าน จะมีอีเมลแจ้งขั้นตอน")}catch(e){alert(e.code||e.message)}};
-$("nav").onclick=e=>{const b=e.target.closest("button[data-page]");if(b){if(b.dataset.page==="cases"&&!admin())return;page=b.dataset.page;editing=null;editingCase=null;render()}};
+$("nav").onclick=e=>{const b=e.target.closest("button[data-page]");if(b){if(b.dataset.page==="cases"&&!admin())return;clearPendingPhotos();page=b.dataset.page;editing=null;editingCase=null;render()}};
 function field(title,id,type,value,attrs=""){return '<div><label for="'+id+'">'+title+'</label><input id="'+id+'" type="'+type+'" value="'+safe(value??"")+'" '+attrs+'></div>'}
 function villageSelect(v="1"){return '<div><label for="village">หมู่บ้าน</label><select id="village">'+villagesVisible().map(x=>'<option value="'+x[0]+'" '+(v===x[0]?"selected":"")+'>ม.'+x[0]+' '+safe(x[1])+'</option>').join("")+'</select></div>'}
 function chart(points,key,color){const p=points.filter(r=>r[key]!=null);if(!p.length)return '<p class="muted">ยังไม่มีข้อมูลแนวโน้ม</p>';const W=550,H=218,L=40,T=20,B=38,max=Math.max(1,...p.map(r=>r[key]*1.2));const x=i=>L+(p.length===1?(W-L-12)/2:i*(W-L-12)/(p.length-1)),y=v=>T+(H-T-B)*(1-v/max);
@@ -263,17 +285,102 @@ return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระ
  (admin()?villageComparison(month):'')+
 '<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
 '<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
+
+const PHOTO_LIMIT=5;
+let pendingPhotoFiles=[],pendingPhotoUrls=[];
+function photoCategoryLabel(category){
+ return ({risk:"พบจุดเสี่ยง / ลูกน้ำ",survey:"การสำรวจครัวเรือน",campaign:"กิจกรรมรณรงค์",other:"กิจกรรมอื่น ๆ"})[category]||"ภาพประกอบ";
+}
+function photoSection(record){
+ const photos=Array.isArray(record?.photos)?record.photos:[];
+ return '<div class="full photo-box"><label>ภาพถ่ายประกอบการสำรวจ / กิจกรรม</label>'+
+ '<p class="small">แนบได้ไม่เกิน '+PHOTO_LIMIT+' ภาพต่อรายการ · ถ่ายจากกล้องหรือเลือกรูปในมือถือ · ระบบย่อภาพก่อนส่ง</p>'+
+ '<div class="photo-grid" id="existing-photo-list">'+(photos.length?photos.map((p,i)=>'<div class="photo-card"><div class="photo-image" id="stored-photo-'+i+'">กำลังโหลดภาพ...</div><small>'+safe(photoCategoryLabel(p.category))+'</small><p>'+safe(p.caption||"")+'</p></div>').join(""):'<p class="muted">ยังไม่มีภาพแนบในรายการนี้</p>')+'</div>'+
+ '<div class="fields" style="margin-top:12px"><div><label for="photoCategory">ประเภทภาพที่จะเพิ่ม</label><select id="photoCategory"><option value="risk">พบจุดเสี่ยง / ลูกน้ำยุงลาย</option><option value="survey">การสำรวจครัวเรือน</option><option value="campaign">กิจกรรมรณรงค์</option><option value="other">กิจกรรมอื่น ๆ</option></select></div><div><label for="photoCaption">คำอธิบายภาพ (ถ้ามี)</label><input id="photoCaption" maxlength="150" placeholder="เช่น พบภาชนะน้ำขังหลังบ้าน"></div></div>'+
+ '<div class="photo-actions"><input class="photo-file-input" id="photoCamera" type="file" accept="image/*" capture="environment"><label class="photo-button" for="photoCamera">ถ่ายภาพด้วยกล้อง</label><input class="photo-file-input" id="photoGallery" type="file" accept="image/*" multiple><label class="photo-button" for="photoGallery">เลือกรูปจากเครื่อง</label></div>'+
+ '<p class="small" id="photo-count">แนบแล้ว '+photos.length+'/'+PHOTO_LIMIT+' ภาพ</p><div class="photo-grid" id="pending-photo-list"></div></div>';
+}
+function clearPendingPhotos(){
+ pendingPhotoUrls.forEach(url=>URL.revokeObjectURL(url));
+ pendingPhotoFiles=[];pendingPhotoUrls=[];
+}
+function addPendingPhotos(event){
+ const files=Array.from(event.target.files||[]);
+ const existing=editing?(records.find(r=>r.id===editing)?.photos||[]).length:0;
+ let rejected=0;
+ for(const file of files){
+  if(!file.type.startsWith("image/")||file.size>25*1024*1024||existing+pendingPhotoFiles.length>=PHOTO_LIMIT){rejected++;continue}
+  pendingPhotoFiles.push(file);pendingPhotoUrls.push(URL.createObjectURL(file));
+ }
+ event.target.value="";
+ renderPendingPhotos();
+ if(rejected)alert("เพิ่มภาพได้ไม่เกิน "+PHOTO_LIMIT+" ภาพต่อรายการ และรับเฉพาะไฟล์รูปที่มีขนาดไม่เกิน 25 MB ต่อภาพ");
+}
+function renderPendingPhotos(){
+ const root=$("pending-photo-list");if(!root)return;
+ root.innerHTML=pendingPhotoFiles.map((f,i)=>'<div class="photo-card"><div class="photo-image"><img src="'+safe(pendingPhotoUrls[i])+'" alt="ภาพที่เลือก"></div><p>'+safe(f.name)+'</p><button type="button" class="btn danger" data-remove-pending="'+i+'">เอาภาพออก</button></div>').join("");
+ const existing=editing?(records.find(r=>r.id===editing)?.photos||[]).length:0;
+ const count=$("photo-count");if(count)count.textContent="แนบแล้ว "+(existing+pendingPhotoFiles.length)+"/"+PHOTO_LIMIT+" ภาพ";
+ root.querySelectorAll("[data-remove-pending]").forEach(b=>b.addEventListener("click",()=>{
+  const i=Number(b.dataset.removePending);if(pendingPhotoUrls[i])URL.revokeObjectURL(pendingPhotoUrls[i]);
+  pendingPhotoFiles.splice(i,1);pendingPhotoUrls.splice(i,1);renderPendingPhotos();
+ }));
+}
+async function compressPhoto(file){
+ if(!file.type.startsWith("image/"))throw new Error("ไฟล์ที่เลือกไม่ใช่รูปภาพ");
+ if(typeof createImageBitmap!=="function")throw new Error("เบราว์เซอร์นี้ไม่รองรับการย่อภาพ กรุณาใช้ Chrome หรือ Safari รุ่นปัจจุบัน");
+ let bitmap;
+ try{bitmap=await createImageBitmap(file)}catch(e){throw new Error("เปิดรูปนี้ไม่ได้ กรุณาเลือกรูป JPG, PNG หรือ WebP")}
+ try{
+  const maxSide=1600,scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+  canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
+  for(const quality of [.78,.66,.55]){
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
+   if(blob&&blob.size<=4.8*1024*1024)return blob;
+  }
+  throw new Error("ภาพมีขนาดใหญ่เกินไปหลังย่อ กรุณาเลือกภาพอื่น");
+ }finally{if(bitmap.close)bitmap.close()}
+}
+async function loadStoredPhotoThumbs(photos){
+ for(let i=0;i<photos.length;i++){
+  const target=$("stored-photo-"+i);if(!target)continue;
+  try{
+   const url=await getDownloadURL(storageRef(storage,photos[i].path));
+   const img=document.createElement("img");img.src=url;img.alt=photoCategoryLabel(photos[i].category);img.loading="lazy";
+   target.replaceChildren(img);
+  }catch(e){target.textContent="เปิดภาพไม่ได้ · "+(e.code||"ตรวจสอบสิทธิหรือ Storage Rules")}
+ }
+}
+async function openPhotoGallery(record){
+ const photos=Array.isArray(record.photos)?record.photos:[];
+ if(!photos.length)return;
+ const overlay=document.createElement("div");overlay.className="photo-modal";
+ overlay.innerHTML='<div class="photo-modal-inner"><div class="flex"><div><h3>ภาพถ่ายประกอบ · ม.'+safe(record.village)+' '+safe(name(record.village))+'</h3><p class="muted">'+safe(record.date)+' · '+photos.length+' ภาพ</p></div><button class="btn" id="photo-modal-close" type="button">ปิด</button></div><div class="photo-grid" id="photo-gallery-grid"><p class="muted">กำลังโหลดภาพ...</p></div></div>';
+ document.body.append(overlay);
+ const close=()=>overlay.remove();overlay.querySelector("#photo-modal-close").onclick=close;
+ overlay.addEventListener("click",e=>{if(e.target===overlay)close()});
+ const grid=overlay.querySelector("#photo-gallery-grid");grid.innerHTML="";
+ for(const photo of photos){
+  const card=document.createElement("figure"),caption=document.createElement("figcaption");
+  try{const url=await getDownloadURL(storageRef(storage,photo.path));const img=document.createElement("img");img.src=url;img.alt=photoCategoryLabel(photo.category);img.loading="lazy";card.append(img)}
+  catch(e){const error=document.createElement("p");error.textContent="ไม่สามารถเปิดภาพได้: "+(e.code||e.message);card.append(error)}
+  caption.textContent=[photoCategoryLabel(photo.category),photo.caption||""].filter(Boolean).join(" · ");
+  card.append(caption);grid.append(card);
+ }
+}
+
 function survey(){const r=records.find(z=>z.id===editing),currentV=admin()?"1":vid();
 return '<div class="flex"><div><h2>'+(r?"แก้ไข":"บันทึก")+'ผลสำรวจลูกน้ำยุงลาย</h2><div class="muted">บันทึกหลายรายการต่อเดือนต่อหมู่บ้านได้ — ห้ามนับครัวเรือนซ้ำ</div></div><span class="tag">'+(admin()?"ผู้ดูแล":"อสม. หมู่ "+safe(vid()))+'</span></div>'+
 '<div class="grid"><div class="panel"><form id="survey-form"><div class="fields">'+field("วันที่สำรวจ","date","date",r?.date||dateNow(),"required")+villageSelect(r?.village||currentV)+field("จำนวนบ้านที่สำรวจ","houses","number",r?.houses??"",'required min="1" step="1"')+field("จำนวนบ้านที่พบลูกน้ำ","positiveHouses","number",r?.positiveHouses??"",'required min="0" step="1"')+field("จำนวนภาชนะที่สำรวจ","containers","number",r?.containers??"",'required min="1" step="1"')+field("จำนวนภาชนะที่พบลูกน้ำ","positiveContainers","number",r?.positiveContainers??"",'required min="0" step="1"')+
 '<div class="full"><label>บ้านเลขที่ที่พบลูกน้ำ</label><textarea id="houseNumbers" placeholder="เช่น 12, 24/1, 56">'+safe(r?.houseNumbers||"")+'</textarea></div>'+
 '<div class="full"><label>จุดเสี่ยงที่พบ</label><textarea id="riskPoints" placeholder="โอ่งน้ำ กระถาง ยางรถยนต์เก่า">'+safe(r?.riskPoints||"")+'</textarea></div>'+
-'<div class="full"><label>หมายเหตุ</label><textarea id="note" placeholder="รายละเอียดการแก้ไขหรือการติดตาม">'+safe(r?.note||"")+'</textarea></div></div>'+
+'<div class="full"><label>หมายเหตุ</label><textarea id="note" placeholder="รายละเอียดการแก้ไขหรือการติดตาม">'+safe(r?.note||"")+'</textarea></div>'+photoSection(r)+'</div>'+
 '<div class="notice" id="calculated">HI / CI จะคำนวณอัตโนมัติ</div><div class="gap"><button class="btn primary" type="submit">บันทึกขึ้นฐานข้อมูลกลาง</button><button type="button" class="btn" id="clear">ล้างแบบฟอร์ม</button></div></form></div>'+
 '<div class="panel"><h3>การคำนวณค่าดัชนี</h3><div class="notice">HI = จำนวนบ้านที่พบลูกน้ำ ÷ จำนวนบ้านที่สำรวจ × 100</div><div class="notice">CI = จำนวนภาชนะที่พบลูกน้ำ ÷ จำนวนภาชนะที่สำรวจ × 100</div><p class="muted">หากพบลูกน้ำหลายภาชนะในบ้านเดียว ให้นับจำนวนบ้านที่พบลูกน้ำเป็น 1 หลัง แต่จำนวนภาชนะให้นับทุกใบที่พบจริง</p><div class="notice warn">โปรดบันทึกเฉพาะบ้านที่ยังไม่เคยนับในเดือนเดียวกัน การสำรวจบ้านเดิมซ้ำอาจทำให้ยอดรวมและค่าดัชนีคลาดเคลื่อน</div><p class="small">ข้อมูลบ้านเลขที่ใช้ติดตามเฉพาะเจ้าหน้าที่ที่มีสิทธิ และไม่ควรเปิดเผยต่อสาธารณะ</p></div></div>'}
 function history(){const sorted=[...records].sort((a,b)=>b.date.localeCompare(a.date));return '<div class="flex"><div><h2>ประวัติการสำรวจ</h2><p class="muted">จำนวน '+sorted.length+' รายการตามสิทธิ</p></div><button class="btn no-print" id="csv">ส่งออก CSV</button></div>'+
-'<div class="panel"><div class="wrap"><table><thead><tr><th>วันที่</th><th>หมู่บ้าน</th><th class="num">จำนวนบ้านที่พบลูกน้ำ</th><th class="num">HI %</th><th class="num">จำนวนภาชนะที่พบลูกน้ำ</th><th class="num">CI %</th><th>บ้านเลขที่</th><th>จุดเสี่ยง</th><th>หมายเหตุ</th><th>แก้ไข</th></tr></thead><tbody>'+
-sorted.map(r=>'<tr><td>'+safe(r.date)+'</td><td>ม.'+safe(r.village)+' '+safe(name(r.village))+'</td><td class="num">'+num(r.positiveHouses)+'</td><td class="num">'+num(hi(r),2)+'</td><td class="num">'+num(r.positiveContainers)+'</td><td class="num">'+num(ci(r),2)+'</td><td class="detail">'+safe(r.houseNumbers||"—")+'</td><td class="detail">'+safe(r.riskPoints||"—")+'</td><td class="detail">'+safe(r.note||"—")+'</td><td><button class="btn" data-edit="'+safe(r.id)+'">แก้ไข</button>'+(admin()?'<button class="btn danger" data-del="'+safe(r.id)+'">ลบ</button>':"")+'</td></tr>').join("")+'</tbody></table></div></div>'}
+'<div class="panel"><div class="wrap"><table><thead><tr><th>วันที่</th><th>หมู่บ้าน</th><th class="num">จำนวนบ้านที่พบลูกน้ำ</th><th class="num">HI %</th><th class="num">จำนวนภาชนะที่พบลูกน้ำ</th><th class="num">CI %</th><th>บ้านเลขที่</th><th>จุดเสี่ยง</th><th>หมายเหตุ</th><th>ภาพถ่าย</th><th>แก้ไข</th></tr></thead><tbody>'+
+sorted.map(r=>'<tr><td>'+safe(r.date)+'</td><td>ม.'+safe(r.village)+' '+safe(name(r.village))+'</td><td class="num">'+num(r.positiveHouses)+'</td><td class="num">'+num(hi(r),2)+'</td><td class="num">'+num(r.positiveContainers)+'</td><td class="num">'+num(ci(r),2)+'</td><td class="detail">'+safe(r.houseNumbers||"—")+'</td><td class="detail">'+safe(r.riskPoints||"—")+'</td><td class="detail">'+safe(r.note||"—")+'</td><td>'+(r.photos?.length?'<button class="btn" data-photos="'+safe(r.id)+'">ดู '+r.photos.length+' ภาพ</button>':"—")+'</td><td><button class="btn" data-edit="'+safe(r.id)+'">แก้ไข</button>'+(admin()?'<button class="btn danger" data-del="'+safe(r.id)+'">ลบ</button>':"")+'</td></tr>').join("")+'</tbody></table></div></div>'}
 function renderCases(){return '<h2>ข้อมูลผู้ป่วย (ผู้ดูแลเท่านั้น)</h2><div class="notice warn">ข้อมูลตั้งต้นปี 2567–2569 เป็นยอดรวมรายปี (24, 1, 0) ยังไม่มีข้อมูลรายเดือนย้อนหลัง การแสดงจำนวนรายเดือนต้องเกิดจากการบันทึกจริง</div>'+
 '<div class="panel"><h3>สถิติปีงบประมาณย้อนหลัง</h3><div class="wrap"><table><thead><tr><th>ปีงบประมาณ</th><th class="num">จำนวนผู้ป่วย</th></tr></thead><tbody>'+YEARS.map(x=>'<tr><td>'+x.year+'</td><td class="num">'+x.count+'</td></tr>').join("")+'</tbody></table></div></div>'+
 '<div class="panel"><h3>บันทึกยอดรายเดือน</h3><form id="case-form"><div class="fields">'+field("วันที่รายงาน","caseDate","date",dateNow(),"required")+villageSelect("1")+field("จำนวนผู้ป่วย (ราย)","count","number","","required min=0 step=1")+'<div class="full"><label>หมายเหตุ (ไม่ระบุตัวบุคคล)</label><textarea id="caseNote"></textarea></div></div><div class="gap" style="margin-top:12px"><button class="btn primary">บันทึกผู้ป่วยรายเดือน</button></div></form></div>'+
@@ -286,21 +393,44 @@ function settings(){return '<h2>ตั้งค่าและจัดการ
 '<div class="panel"><h3>การสำรองข้อมูล</h3><p class="muted">ดาวน์โหลดเฉพาะข้อมูลที่บัญชีนี้ได้รับสิทธิให้เข้าถึง ไม่ควรเผยแพร่ไฟล์สำรองที่มีบ้านเลขที่ต่อสาธารณะ</p><button class="btn" id="backup">ดาวน์โหลดสำรอง JSON</button></div><div class="notice">หากต้องการสร้างบัญชี อสม. เพิ่ม ให้ผู้ดูแลสร้างใน Firebase Authentication แล้วเพิ่มเอกสาร users/{UID} ที่กำหนด role และ village โดยไม่ต้องให้ อสม. สมัครเอง</div>'}
 function render(){if(!profile||!me)return;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const html=page==="dashboard"?dashboard():page==="survey"?survey():page==="history"?history():page==="cases"&&admin()?renderCases():page==="report"?report():settings();$("view").innerHTML=html;bind()}
 function bind(){if(page==="dashboard"||page==="report")bindMonthPicker()
-if(page==="survey"){for(const id of ["houses","positiveHouses","containers","positiveContainers"])$(id).addEventListener("input",calculate);calculate();$("survey-form").onsubmit=saveSurvey;$("clear").onclick=()=>{editing=null;render()}}
-if(page==="history"){$("csv").onclick=downloadCsv;document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{editing=b.dataset.edit;page="survey";render()});document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteSurvey(b.dataset.del))}
+if(page==="survey"){for(const id of ["houses","positiveHouses","containers","positiveContainers"])$(id).addEventListener("input",calculate);calculate();$("survey-form").onsubmit=saveSurvey;$("photoCamera").addEventListener("change",addPendingPhotos);$("photoGallery").addEventListener("change",addPendingPhotos);renderPendingPhotos();loadStoredPhotoThumbs(records.find(r=>r.id===editing)?.photos||[]);$("clear").onclick=()=>{clearPendingPhotos();editing=null;render()}}
+if(page==="history"){$("csv").onclick=downloadCsv;document.querySelectorAll("[data-photos]").forEach(b=>b.onclick=()=>{const r=records.find(x=>x.id===b.dataset.photos);if(r)openPhotoGallery(r)});document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{clearPendingPhotos();editing=b.dataset.edit;page="survey";render()});document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteSurvey(b.dataset.del))}
 if(page==="cases"&&admin())$("case-form").onsubmit=saveCase;
 if(page==="report")$("print").onclick=()=>window.print();
 if(page==="settings"){$("copy-uid").onclick=()=>navigator.clipboard.writeText(me.uid).then(()=>alert("คัดลอก UID แล้ว"));$("logout").onclick=()=>signOut(auth);$("backup").onclick=()=>download("HuaiSo_online_backup.json",JSON.stringify({surveys:records,cases:admin()?cases:[]},null,2),"application/json");}}
 function calculate(){const h=Number($("houses").value),hp=Number($("positiveHouses").value),c=Number($("containers").value),cp=Number($("positiveContainers").value);$("calculated").textContent="คำนวณอัตโนมัติ: HI "+num(pct(hp,h),2)+"% | CI "+num(pct(cp,c),2)+"%"}
 function readForm(){const date=$("date").value;return {month:date.slice(0,7),date:date,village:$("village").value,houses:Number($("houses").value),positiveHouses:Number($("positiveHouses").value),containers:Number($("containers").value),positiveContainers:Number($("positiveContainers").value),houseNumbers:$("houseNumbers").value.trim(),riskPoints:$("riskPoints").value.trim(),note:$("note").value.trim(),updatedAt:serverTimestamp(),updatedBy:me.uid}}
-async function saveSurvey(e){e.preventDefault();const r=readForm();if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||[r.houses,r.positiveHouses,r.containers,r.positiveContainers].some(x=>!Number.isInteger(x))||r.houses<1||r.containers<1||r.positiveHouses<0||r.positiveContainers<0||r.positiveHouses>r.houses||r.positiveContainers>r.containers){alert("กรุณาตรวจสอบจำนวนบ้านและภาชนะที่พบลูกน้ำ");return}
-if(!admin()&&r.village!==vid()){alert("คุณไม่มีสิทธิแก้ไขหมู่บ้านอื่น");return}
-if(editing){const original=records.find(x=>x.id===editing);if(!original||original.month!==r.month||original.village!==r.village){alert("ไม่อนุญาตให้เปลี่ยนเดือนหรือหมู่บ้านของรายการที่แก้ไข");return}}
-const btn=document.querySelector("#survey-form button[type=submit]");btn.disabled=true;
-try{const target=editing?doc(db,"surveys",editing):doc(collection(db,"surveys"));await setDoc(target,r);editing=null;month=r.month;followLatest=true;page="history";render();note("บันทึกข้อมูลออนไลน์สำเร็จ และแอดมินจะเห็นรายการใหม่แล้ว")}
-catch(err){alert("บันทึกไม่สำเร็จ: "+(err.code||err.message))}
-finally{btn.disabled=false}}
-async function deleteSurvey(id){if(!admin()||!confirm("ต้องการลบรายการสำรวจนี้หรือไม่?"))return;try{await deleteDoc(doc(db,"surveys",id));note("ลบข้อมูลแล้ว")}catch(e){alert(e.message)}}
+async function saveSurvey(e){
+ e.preventDefault();const r=readForm();
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||[r.houses,r.positiveHouses,r.containers,r.positiveContainers].some(x=>!Number.isInteger(x))||r.houses<1||r.containers<1||r.positiveHouses<0||r.positiveContainers<0||r.positiveHouses>r.houses||r.positiveContainers>r.containers){alert("กรุณาตรวจสอบจำนวนบ้านและภาชนะที่พบลูกน้ำ");return}
+ if(!admin()&&r.village!==vid()){alert("คุณไม่มีสิทธิแก้ไขหมู่บ้านอื่น");return}
+ const id=r.month+"_"+r.village;if(editing&&editing!==id){alert("ไม่อนุญาตให้ย้ายรายการไปเดือนหรือหมู่บ้านอื่น โปรดกลับไปสร้างรายการใหม่");return}
+ const previous=editing?records.find(x=>x.id===editing):null;
+ r.photos=Array.isArray(previous?.photos)?[...previous.photos]:[];
+ if(r.photos.length+pendingPhotoFiles.length>PHOTO_LIMIT){alert("แนบภาพได้ไม่เกิน "+PHOTO_LIMIT+" ภาพต่อรายการ");return}
+ const btn=document.querySelector("#survey-form button[type=submit]"),oldLabel=btn.textContent,uploadedPaths=[];
+ btn.disabled=true;
+ try{
+  const category=$("photoCategory").value,caption=$("photoCaption").value.trim();
+  for(let i=0;i<pendingPhotoFiles.length;i++){
+   btn.textContent="กำลังย่อและอัปโหลดภาพ "+(i+1)+"/"+pendingPhotoFiles.length+"…";
+   const blob=await compressPhoto(pendingPhotoFiles[i]);
+   const fileName=Date.now()+"_"+Math.random().toString(36).slice(2,9)+".jpg";
+   const path="surveyPhotos/"+r.village+"/"+id+"/"+me.uid+"/"+fileName;
+   await uploadBytes(storageRef(storage,path),blob,{contentType:"image/jpeg",customMetadata:{category:category,caption:caption,uploadedBy:me.uid}});
+   uploadedPaths.push(path);
+   r.photos.push({path:path,category:category,caption:caption,uploadedBy:me.uid,uploadedAt:new Date().toISOString()});
+  }
+  btn.textContent="กำลังบันทึกผลสำรวจ…";
+  await setDoc(doc(db,"surveys",id),r);
+  clearPendingPhotos();editing=null;month=r.month;page="history";render();note("บันทึกข้อมูลสำรวจและภาพถ่ายออนไลน์สำเร็จ");
+ }catch(err){
+  await Promise.all(uploadedPaths.map(path=>deleteObject(storageRef(storage,path)).catch(()=>null)));
+  alert("บันทึกไม่สำเร็จ: "+(err.code||err.message)+"\nหากเป็นการแนบภาพ โปรดตรวจสอบว่าเปิดใช้ Firebase Storage และเผยแพร่ Storage Rules แล้ว");
+ }finally{if(btn.isConnected){btn.disabled=false;btn.textContent=oldLabel}}
+}
+
+async function deleteSurvey(id){if(!admin()||!confirm("ต้องการลบรายการสำรวจนี้หรือไม่? ภาพถ่ายที่แนบจะถูกลบด้วย"))return;try{const record=records.find(r=>r.id===id);await deleteDoc(doc(db,"surveys",id));if(record?.photos?.length)await Promise.all(record.photos.map(p=>deleteObject(storageRef(storage,p.path)).catch(()=>null)));note("ลบข้อมูลและภาพถ่ายที่แนบแล้ว")}catch(e){alert(e.message)}}
 async function saveCase(e){e.preventDefault();if(!admin())return;const date=$("caseDate").value,month=date.slice(0,7),village=$("village").value,count=Number($("count").value),noteText=$("caseNote").value.trim();
 if(!date||!Number.isInteger(count)||count<0)return alert("กรุณากรอกจำนวนผู้ป่วยที่ถูกต้อง");
 try{await setDoc(doc(db,"cases",month+"_"+village),{month,date,village,count,note:noteText,updatedAt:serverTimestamp(),updatedBy:me.uid});note("บันทึกจำนวนผู้ป่วยออนไลน์แล้ว")}catch(err){alert("บันทึกไม่สำเร็จ: "+err.message)}}
