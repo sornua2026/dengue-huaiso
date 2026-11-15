@@ -93,10 +93,62 @@ label.photo-button{display:inline-flex;align-items:center;gap:6px;margin:0;borde
 @media(max-width:480px){.photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.photo-modal{padding:7px}.photo-modal-inner{padding:10px}}
 @media print{.photo-actions,.photo-file-input{display:none!important}}
 
+
+/* Modern dengue dashboard theme */
+header.site-header{padding:17px max(16px,calc((100vw - 1160px)/2));background:radial-gradient(circle at 88% 12%,#178d8a 0,#0d6a70 32%,transparent 60%),linear-gradient(115deg,#123c50,#075e69);position:relative;overflow:hidden}
+header.site-header:after{content:"";position:absolute;right:-40px;bottom:-85px;width:340px;height:220px;border-radius:50%;background:#ffffff0b;pointer-events:none}
+.brand-row{display:flex;align-items:center;gap:16px;position:relative;z-index:1}
+.brand-logo-wrap{width:78px;height:78px;flex:0 0 78px;position:relative;display:grid;place-items:center}
+.brand-logo{width:100%;height:100%;object-fit:contain;border-radius:50%;background:#fff;padding:3px;box-shadow:0 4px 16px #002c3545}
+.brand-logo-fallback{width:70px;height:70px;border:3px solid #e9bc52;border-radius:50%;background:#8f247b;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 3px 14px #002c3545;font-weight:900}
+.brand-logo-fallback span{font-size:19px;line-height:1.1}.brand-logo-fallback small{font-size:9px;margin-top:3px}
+.brand-logo-wrap.has-logo .brand-logo-fallback{display:none}
+.brand-copy{min-width:0}.brand-copy h1{font-size:clamp(18px,3.3vw,27px);letter-spacing:-.3px;margin:3px 0 4px;line-height:1.38}.brand-copy p{font-size:12px;color:#d5f1ed}
+.brand-copy .eyebrow{font-size:10px;letter-spacing:1.5px;color:#a9f1e2;font-weight:850}
+@media(max-width:560px){header.site-header{padding:13px 14px}.brand-row{gap:11px;align-items:center}.brand-logo-wrap{width:58px;height:58px;flex-basis:58px}.brand-logo-fallback{width:54px;height:54px}.brand-logo-fallback span{font-size:15px}.brand-logo-fallback small{font-size:8px}.brand-copy h1{font-size:16px}.brand-copy p{font-size:10px;line-height:1.5}.brand-copy .eyebrow{font-size:9px}}
+.hero-card{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(180px,.8fr);gap:18px;align-items:center;padding:22px 24px;margin:0 0 14px;border:1px solid #c8e9e6;border-radius:18px;background:linear-gradient(115deg,#e8fbf8 0%,#f4fcff 58%,#e4f4f2 100%);box-shadow:0 5px 18px #174c5a0d;overflow:hidden}
+.hero-card h2{font-size:clamp(20px,3vw,29px);line-height:1.35;color:#17485a;margin:0 0 7px}
+.hero-card p{font-size:13px;line-height:1.7;color:#54727d;margin:0}
+.hero-chip{display:inline-flex;align-items:center;gap:7px;margin-top:13px;padding:7px 11px;border-radius:30px;background:#d6f3e9;color:#16745f;font-size:11px;font-weight:850}
+.hero-art{display:flex;align-items:center;justify-content:center;min-height:130px;color:#087c80}
+.hero-art svg{width:min(100%,250px);height:auto;filter:drop-shadow(0 7px 8px #07545a16)}
+.dashboard-section{margin:14px 0}
+.dashboard-section-title{display:flex;align-items:center;gap:10px;margin:0 0 10px;color:#17485a}
+.dashboard-section-title h3{font-size:17px;margin:0}
+.section-kicker{font-size:10px;color:#77909a;font-weight:800;letter-spacing:.7px}
+.prevention-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.prevention-card{border:1px solid #dcebe9;border-radius:14px;padding:14px;background:#fff;box-shadow:0 3px 12px #174c5a08;min-width:0}
+.prevention-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#e5f7f2;color:#078276;margin-bottom:9px}
+.prevention-icon svg{width:25px;height:25px}
+.prevention-card h4{font-size:14px;color:#155467;margin:0 0 5px}
+.prevention-card p{font-size:11px;line-height:1.65;color:#627d88;margin:0}
+.disease-strip{margin-top:11px;padding:10px 12px;border-radius:11px;background:#fff2f1;border:1px solid #f7d8d5;color:#9d4145;font-size:11px;line-height:1.6;font-weight:800;text-align:center}
+.measure-panel{border:1px solid #d8e9e8;border-radius:16px;padding:16px;background:linear-gradient(145deg,#fff,#f3fbfa);box-shadow:0 3px 12px #174c5a08}
+.measure-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.measure-step{border-radius:12px;background:#fff;border:1px solid #dcece9;padding:12px;min-width:0}
+.measure-number{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;background:#d9f5ec;color:#087d70;font-size:21px;font-weight:900;margin-bottom:8px}
+.measure-step h4{font-size:13px;color:#175166;margin:0 0 5px}
+.measure-step p{font-size:11px;line-height:1.65;color:#607984;margin:0}
+.measure-note{font-size:10px;color:#718994;line-height:1.6;margin:10px 0 0}
+.tracking-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tracking-card{border:1px solid #dbe9ed;border-radius:14px;padding:15px;background:#fff;min-width:0;box-shadow:0 3px 12px #174c5a08}
+.tracking-card h4{margin:0 0 5px;font-size:14px;color:#174e61}
+.tracking-card p{margin:0 0 10px;font-size:11px;line-height:1.6;color:#708692}
+.tracking-card input{font-size:11px;padding:9px}
+.tracking-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.tracking-actions .btn{flex:1}
+.tracking-actions a{display:inline-flex;justify-content:center;align-items:center;text-decoration:none}
+.tracking-help{font-size:10px;color:#7b919b;margin-top:8px;line-height:1.6}
+.kpis .kpi{border-radius:14px;box-shadow:0 3px 12px #174c5a08}
+.kpi:nth-child(1){border-top:3px solid #d95c62}.kpi:nth-child(2){border-top:3px solid #27a5b1}.kpi:nth-child(3){border-top:3px solid #36a878}.kpi:nth-child(4){border-top:3px solid #8a70c9}
+.panel{border-radius:14px;box-shadow:0 3px 12px #174c5a08}
+@media(max-width:760px){.hero-card{grid-template-columns:1fr;padding:17px}.hero-art{min-height:95px}.hero-art svg{width:160px}.measure-grid{grid-template-columns:1fr}.measure-step{display:grid;grid-template-columns:42px 1fr;column-gap:10px;align-items:start}.measure-number{grid-row:span 2;margin:0}.measure-step h4{margin-top:2px}.tracking-grid{grid-template-columns:1fr}}
+@media(max-width:470px){.prevention-grid{grid-template-columns:1fr}.prevention-card{display:grid;grid-template-columns:44px 1fr;column-gap:10px;align-items:start;padding:11px}.prevention-icon{grid-row:span 2;margin:0}.prevention-card h4{margin-top:2px}.prevention-card p{grid-column:2}.disease-strip{font-size:10px}}
+
 </style>
 </head>
 <body>
-<header><div class="eyebrow">DENGUE SURVEILLANCE · FIREBASE ONLINE</div><h1>ระบบเฝ้าระวังโรคไข้เลือดออกและดัชนีลูกน้ำยุงลาย</h1><p>รพ.สต.บ้านซ้อเหนือ · อำเภอเชียงของ จังหวัดเชียงราย</p></header>
+<header class="site-header"><div class="brand-row"><div class="brand-logo-wrap"><img class="brand-logo" src="logo-rpst.png" alt="ตราสัญลักษณ์โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านซ้อเหนือ" onload="this.parentElement.classList.add('has-logo')" onerror="this.style.display='none'"><div class="brand-logo-fallback" aria-hidden="true"><span>รพ.สต.</span><small>บ้านซ้อเหนือ</small></div></div><div class="brand-copy"><div class="eyebrow">DENGUE SURVEILLANCE · HUAI SO</div><h1>ระบบเฝ้าระวังโรคไข้เลือดออกและดัชนีลูกน้ำยุงลาย</h1><p>โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านซ้อเหนือ · ตำบลห้วยซ้อ อำเภอเชียงของ จังหวัดเชียงราย</p></div></div></header>
 <nav id="nav" style="display:none">
 <button data-page="dashboard" class="active">ภาพรวม</button><button data-page="survey">บันทึก HI / CI</button><button data-page="history">ประวัติ</button><button data-page="cases" id="case-tab">ข้อมูลผู้ป่วย</button><button data-page="report">รายงาน</button><button data-page="settings">ตั้งค่า</button>
 </nav>
@@ -275,9 +327,17 @@ function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Se
 const t=months().map(m=>{const b=aggregate(rowsOf(m));return {month:m,HI:hi(b),CI:ci(b)}});
 let alerts=[];if(reportedCount<villagesVisible().length)alerts.push("รายงานยังไม่ครบทุกหมู่บ้านที่ได้รับอนุญาต");rr.forEach(r=>{if(hi(r)>=5||ci(r)>=3)alerts.push("ม."+r.village+" "+name(r.village)+" มีค่า HI หรือ CI ถึงเกณฑ์ติดตามตัวอย่าง")});
 if(!alerts.length)alerts.push("ไม่พบสัญญาณตามเงื่อนไขติดตามตัวอย่าง ยังต้องเฝ้าระวังต่อเนื่อง");
-return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div>'+monthPicker()+'</div>'+
+const mosquito='<svg viewBox="0 0 260 170" role="img" aria-label="ภาพประกอบยุงลาย" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M127 70 Q104 36 74 48 Q57 55 68 70 Q83 85 117 78 Q93 91 78 111 M132 69 Q151 34 183 42 Q202 48 191 65 Q180 79 144 77 Q169 90 186 111" fill="#ffffffa8" stroke="#4b9d9c"/><ellipse cx="128" cy="83" rx="9" ry="23" fill="#173d50"/><circle cx="128" cy="54" r="8" fill="#173d50"/><path d="M128 45 L124 23 M132 45 L141 25 M126 79 L99 99 L76 132 M132 79 L155 100 L183 132 M122 91 L101 112 L91 145 M135 91 L155 113 L169 145 M124 62 L91 55 M134 62 L165 52" stroke="#173d50"/><path d="M128 52 L126 27 M126 54 L110 31 M133 53 L150 32" stroke="#173d50"/><path d="M118 73 L138 73 M118 85 L138 85 M120 97 L136 97" stroke="#f5d15e" stroke-width="4"/></svg>';
+const iconHome='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9M9 21v-7h6v7"/></svg>';
+const iconTrash='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 14h12l1-14M9 7V4h6v3"/></svg>';
+const iconWater='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C9 7 5 11 5 15a7 7 0 0 0 14 0c0-4-4-8-7-13Z"/><path d="M9 16c.3 1.5 1.2 2.3 2.8 2.6"/></svg>';
+return '<section class="hero-card"><div><div class="section-kicker">COMMUNITY DENGUE PREVENTION</div><h2>รู้ทันยุงลาย ร่วมใจป้องกันไข้เลือดออก</h2><p>เฝ้าระวังเชิงรุกด้วยข้อมูล HI / CI ควบคู่กับการจัดการสิ่งแวดล้อมและการมีส่วนร่วมของชุมชนห้วยซ้อ</p><div class="hero-chip">สำรวจสม่ำเสมอ · กำจัดแหล่งเพาะพันธุ์ · แจ้งเหตุรวดเร็ว</div></div><div class="hero-art">'+mosquito+'</div></section>'+
+'<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div>'+monthPicker()+'</div>'+
 '<p class="muted">กำลังประมวลผลเดือน'+mLabel(month)+' · สถานะซิงก์: '+safe(syncState)+'</p>'+(rr.length===0?'<div class="notice warn">ยังไม่มีผลสำรวจในเดือน'+mLabel(month)+' — ค่า HI/CI ยังประเมินไม่ได้ ไม่ใช่ศูนย์เปอร์เซ็นต์</div>':'')+'<div class="kpis">'+[['House Index (HI)',hi(a)==null?"—":num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',ci(a)==null?"—":num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
  (admin()?villageComparison(month):'')+
+'<section class="dashboard-section"><div class="dashboard-section-title"><div><div class="section-kicker">COMMUNITY ACTION</div><h3>3 เก็บ ป้องกัน 3 โรค</h3></div></div><div class="prevention-grid"><article class="prevention-card"><div class="prevention-icon">'+iconHome+'</div><h4>เก็บบ้าน</h4><p>จัดบ้านให้สะอาด เป็นระเบียบ ลดมุมอับและที่เกาะพักของยุงลาย</p></article><article class="prevention-card"><div class="prevention-icon">'+iconTrash+'</div><h4>เก็บขยะ</h4><p>เก็บขยะ ภาชนะไม่ใช้แล้ว และกำจัดสิ่งที่อาจขังน้ำรอบบ้าน</p></article><article class="prevention-card"><div class="prevention-icon">'+iconWater+'</div><h4>เก็บน้ำ</h4><p>ปิดฝาภาชนะเก็บน้ำให้มิดชิด เปลี่ยนน้ำและขัดล้างภาชนะสม่ำเสมอ</p></article></div><div class="disease-strip">ร่วมป้องกัน 3 โรคสำคัญ · ไข้เลือดออก · ไข้ปวดข้อยุงลาย (ชิคุนกุนยา) · ไข้ซิกา</div></section>'+
+'<section class="dashboard-section measure-panel"><div class="dashboard-section-title"><div><div class="section-kicker">RAPID RESPONSE</div><h3>มาตรการควบคุมโรค 3-3-1</h3></div></div><div class="measure-grid"><article class="measure-step"><div class="measure-number">3</div><h4>ภายใน 3 ชั่วโมงแรก</h4><p>สถานพยาบาลรายงานผู้ป่วยสงสัยไข้เลือดออกให้ รพ.สต. และหน่วยงานที่เกี่ยวข้องทราบโดยเร็ว</p></article><article class="measure-step"><div class="measure-number">3</div><h4>ภายใน 3 ชั่วโมงหลังรับแจ้ง</h4><p>ทีม รพ.สต. ประสาน อสม. ลงสอบสวนโรคเบื้องต้น ตรวจสอบข้อมูลและประเมินพื้นที่เสี่ยง</p></article><article class="measure-step"><div class="measure-number">1 วัน</div><h4>ภายใน 1 วัน</h4><p>ประสานท้องถิ่นและภาคีเครือข่ายควบคุมยุงลาย กำจัดแหล่งเพาะพันธุ์ และดำเนินมาตรการตามแนวทางวิชาการ</p></article></div><p class="measure-note">เมื่อพบผู้ป่วย ให้แจ้งเจ้าหน้าที่สาธารณสุขทันที และปฏิบัติตามแนวทางควบคุมโรคของหน่วยงานในพื้นที่</p></section>'+
+'<section class="dashboard-section"><div class="dashboard-section-title"><div><div class="section-kicker">OFFICIAL SURVEILLANCE LINKS</div><h3>ติดตามสถานการณ์ไข้เลือดออก</h3></div></div><div class="tracking-grid"><article class="tracking-card"><h4>จังหวัดเชียงราย</h4><p>สำนักงานสาธารณสุขจังหวัดเชียงราย · ศูนย์ปฏิบัติการ PHEOC โรคไข้เลือดออก</p><input id="province-track-url" type="url" value="https://cro.moph.go.th/mophcr/" aria-label="ลิงก์ติดตามสถานการณ์จังหวัดเชียงราย"><div class="tracking-actions"><button class="btn primary" type="button" data-open-track="province-track-url">เปิดเว็บไซต์เชียงราย ↗</button></div></article><article class="tracking-card"><h4>ประเทศไทย</h4><p>กรมควบคุมโรค · แพลตฟอร์มทันระบาด สำหรับติดตามสถานการณ์และรายงานโรคไข้เลือดออก</p><input id="national-track-url" type="url" value="https://trb.ddc.moph.go.th/" aria-label="ลิงก์ติดตามสถานการณ์ประเทศไทย"><div class="tracking-actions"><button class="btn primary" type="button" data-open-track="national-track-url">เปิดเว็บไซต์ระดับประเทศ ↗</button></div></article></div><p class="tracking-help">สามารถวาง URL ของหน่วยงานที่ต้องการในช่องได้ แล้วกดเปิดเว็บไซต์ · ลิงก์ที่แก้ไขจะใช้เฉพาะเบราว์เซอร์/อุปกรณ์นี้</p></section>'+
 '<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
 '<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
 
@@ -405,7 +465,8 @@ function settings(){return '<h2>ตั้งค่าและจัดการ
 (admin()?'<div class="panel"><h3>นำเข้าข้อมูลพื้นฐานปี 2569</h3><p class="muted">ข้อมูล 6 หมู่บ้าน (HI 4.32%, CI 2.22%) ยังไม่ถูกนำเข้าฐานข้อมูลออนไลน์โดยอัตโนมัติ</p><div class="notice warn">ก่อนนำเข้า กรุณาตรวจสอบวันที่สำรวจที่ใช้เป็นตัวอย่าง (21 กันยายน 2569) และยืนยันว่าตัวเลขของแต่ละหมู่บ้านถูกต้อง</div><button class="btn primary" id="seed">นำเข้าข้อมูลพื้นฐาน 6 หมู่บ้าน</button></div>':"")+
 '<div class="panel"><h3>การสำรองข้อมูลครบชุด</h3><p class="muted">สำหรับแอดมิน: ดาวน์โหลดข้อมูลสำรวจ HI/CI ทั้ง 6 หมู่บ้าน ประวัติผู้ป่วย และภาพถ่ายจริงจาก Firestore รวมอยู่ในไฟล์ JSON เดียว ควรสำรองทุกเดือนและเก็บในพื้นที่ส่วนตัวที่ปลอดภัย</p><button class="btn" id="backup">ดาวน์โหลดสำรองข้อมูลครบรวมภาพ</button></div><div class="notice">หากต้องการสร้างบัญชี อสม. เพิ่ม ให้ผู้ดูแลสร้างใน Firebase Authentication แล้วเพิ่มเอกสาร users/{UID} ที่กำหนด role และ village โดยไม่ต้องให้ อสม. สมัครเอง</div>'}
 function render(){if(!profile||!me)return;document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const html=page==="dashboard"?dashboard():page==="survey"?survey():page==="history"?history():page==="cases"&&admin()?renderCases():page==="report"?report():settings();$("view").innerHTML=html;bind()}
-function bind(){if(page==="dashboard"||page==="report")bindMonthPicker()
+function bindTrackingLinks(){document.querySelectorAll("[data-open-track]").forEach(button=>button.addEventListener("click",()=>{const input=$(button.dataset.openTrack);try{const url=new URL(input.value.trim());if(url.protocol!=="https:"&&url.protocol!=="http:")throw new Error("invalid protocol");window.open(url.href,"_blank","noopener,noreferrer")}catch(e){alert("กรุณาตรวจสอบ URL ให้ถูกต้อง และขึ้นต้นด้วย https://")}}))}
+function bind(){if(page==="dashboard"){bindMonthPicker();bindTrackingLinks()}if(page==="report")bindMonthPicker()
 if(page==="survey"){for(const id of ["houses","positiveHouses","containers","positiveContainers"])$(id).addEventListener("input",calculate);calculate();$("survey-form").onsubmit=saveSurvey;$("photoCamera").addEventListener("change",addPendingPhotos);$("photoGallery").addEventListener("change",addPendingPhotos);renderPendingPhotos();loadStoredPhotoThumbs(records.find(r=>r.id===editing)?.photos||[]);$("clear").onclick=()=>{clearPendingPhotos();editing=null;render()}}
 if(page==="history"){$("csv").onclick=downloadCsv;document.querySelectorAll("[data-photos]").forEach(b=>b.onclick=()=>{const r=records.find(x=>x.id===b.dataset.photos);if(r)openPhotoGallery(r)});document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>{clearPendingPhotos();editing=b.dataset.edit;page="survey";render()});document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>deleteSurvey(b.dataset.del))}
 if(page==="cases"&&admin())$("case-form").onsubmit=saveCase;
