@@ -421,8 +421,10 @@ async function saveSurvey(e){
  e.preventDefault();const r=readForm();
  if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||[r.houses,r.positiveHouses,r.containers,r.positiveContainers].some(x=>!Number.isInteger(x))||r.houses<1||r.containers<1||r.positiveHouses<0||r.positiveContainers<0||r.positiveHouses>r.houses||r.positiveContainers>r.containers){alert("กรุณาตรวจสอบจำนวนบ้านและภาชนะที่พบลูกน้ำ");return}
  if(!admin()&&r.village!==vid()){alert("คุณไม่มีสิทธิแก้ไขหมู่บ้านอื่น");return}
- const id=r.month+"_"+r.village;if(editing&&editing!==id){alert("ไม่อนุญาตให้ย้ายรายการไปเดือนหรือหมู่บ้านอื่น โปรดกลับไปสร้างรายการใหม่");return}
  const previous=editing?records.find(x=>x.id===editing):null;
+ if(editing&&!previous){alert("ไม่พบรายการเดิมที่ต้องการแก้ไข โปรดรีเฟรชหน้าแล้วลองอีกครั้ง");return}
+ if(previous&&(previous.month!==r.month||previous.village!==r.village)){alert("ไม่อนุญาตให้ย้ายรายการไปเดือนหรือหมู่บ้านอื่น โปรดสร้างรายการใหม่แทน");return}
+ const id=editing||doc(collection(db,"surveys")).id;
  r.photos=Array.isArray(previous?.photos)?[...previous.photos]:[];
  if(r.photos.length+pendingPhotoFiles.length>PHOTO_LIMIT){alert("แนบภาพได้ไม่เกิน "+PHOTO_LIMIT+" ภาพต่อรายการ");return}
  const btn=document.querySelector("#survey-form button[type=submit]"),oldLabel=btn.textContent,uploadedPhotoIds=[];
