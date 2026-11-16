@@ -597,7 +597,7 @@ async function openPhotoGallery(record){
 }
 
 function survey(){const r=records.find(z=>z.id===editing),currentV=admin()?"1":vid();
-return '<div class="flex"><div><h2>'+(r?"แก้ไข":"บันทึก")+'ผลสำรวจลูกน้ำยุงลาย</h2><div class="muted">บันทึกหนึ่งรายการต่อเดือนต่อหมู่บ้าน</div></div><span class="tag">'+(admin()?"ผู้ดูแล":"อสม. หมู่ "+safe(vid()))+'</span></div>'+
+return '<div class="flex"><div><h2>'+(r?"แก้ไข":"บันทึก")+'ผลสำรวจลูกน้ำยุงลาย</h2><div class="muted">บันทึกผลสำรวจได้หลายครั้งต่อเดือน ระบบเก็บแต่ละครั้งเป็นประวัติแยกกัน</div></div><span class="tag">'+(admin()?"ผู้ดูแล":"อสม. หมู่ "+safe(vid()))+'</span></div>'+
 '<div class="grid"><div class="panel"><form id="survey-form"><div class="fields">'+field("วันที่สำรวจ","date","date",r?.date||dateNow(),"required")+villageSelect(r?.village||currentV)+field("จำนวนบ้านที่สำรวจ","houses","number",r?.houses??"",'required min="1" step="1"')+field("จำนวนบ้านที่พบลูกน้ำ","positiveHouses","number",r?.positiveHouses??"",'required min="0" step="1"')+field("จำนวนภาชนะที่สำรวจ","containers","number",r?.containers??"",'required min="1" step="1"')+field("จำนวนภาชนะที่พบลูกน้ำ","positiveContainers","number",r?.positiveContainers??"",'required min="0" step="1"')+
 '<div class="full"><label>บ้านเลขที่ที่พบลูกน้ำ</label><textarea id="houseNumbers" placeholder="เช่น 12, 24/1, 56">'+safe(r?.houseNumbers||"")+'</textarea></div>'+
 '<div class="full"><label>จุดเสี่ยงที่พบ</label><textarea id="riskPoints" placeholder="โอ่งน้ำ กระถาง ยางรถยนต์เก่า">'+safe(r?.riskPoints||"")+'</textarea></div>'+
@@ -631,8 +631,10 @@ async function saveSurvey(e){
  e.preventDefault();const r=readForm();
  if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||[r.houses,r.positiveHouses,r.containers,r.positiveContainers].some(x=>!Number.isInteger(x))||r.houses<1||r.containers<1||r.positiveHouses<0||r.positiveContainers<0||r.positiveHouses>r.houses||r.positiveContainers>r.containers){alert("กรุณาตรวจสอบจำนวนบ้านและภาชนะที่พบลูกน้ำ");return}
  if(!admin()&&r.village!==vid()){alert("คุณไม่มีสิทธิแก้ไขหมู่บ้านอื่น");return}
- const id=r.month+"_"+r.village;if(editing&&editing!==id){alert("ไม่อนุญาตให้ย้ายรายการไปเดือนหรือหมู่บ้านอื่น โปรดกลับไปสร้างรายการใหม่");return}
  const previous=editing?records.find(x=>x.id===editing):null;
+ if(editing&&!previous){alert("ไม่พบรายการเดิมที่ต้องการแก้ไข โปรดรีเฟรชหน้าแล้วลองอีกครั้ง");return}
+ if(previous&&(previous.month!==r.month||previous.village!==r.village)){alert("ไม่อนุญาตให้ย้ายรายการไปเดือนหรือหมู่บ้านอื่น โปรดสร้างรายการใหม่แทน");return}
+ const id=editing||doc(collection(db,"surveys")).id;
  r.photos=Array.isArray(previous?.photos)?[...previous.photos]:[];
  if(r.photos.length+pendingPhotoFiles.length>PHOTO_LIMIT){alert("แนบภาพได้ไม่เกิน "+PHOTO_LIMIT+" ภาพต่อรายการ");return}
  const btn=document.querySelector("#survey-form button[type=submit]"),oldLabel=btn.textContent,uploadedPhotoIds=[];
