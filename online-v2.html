@@ -191,6 +191,76 @@ function sixVillageOverview(){
  return '<div class="panel"><div class="flex"><h3>สรุปข้อมูลล่าสุดครบทั้ง 6 หมู่บ้าน (สำหรับแอดมิน)</h3><span class="tag">เชื่อมข้อมูลจาก Firestore</span></div><p class="muted">แสดงเดือนล่าสุดของแต่ละหมู่บ้านแยกกัน จึงไม่รวมค่าดัชนีจากคนละเดือนเข้าด้วยกัน</p><div class="wrap"><table><thead><tr><th>หมู่บ้าน</th><th>เดือนล่าสุด</th><th class="num">รายการสำรวจ</th><th class="num">HI</th><th class="num">CI</th></tr></thead><tbody>'+lines.join("")+'</tbody></table></div></div>';
 }
 
+
+function parseHouseNumbers(value){
+ return String(value||"").split(/[,;\n\r]+/).map(x=>x.trim().replace(/[๐-๙]/g,d=>"0123456789"["๐๑๒๓๔๕๖๗๘๙".indexOf(d)]).replace(/\s+/g,"").toLowerCase()).filter(Boolean);
+}
+function findDuplicatePositiveHouseNumbers(record,excludeId){
+ const incoming=parseHouseNumbers(record.houseNumbers),seen=new Set(),duplicates=new Set();
+ incoming.forEach(h=>{if(seen.has(h))duplicates.add(h);seen.add(h)});
+ const existing=new Set(records.filter(r=>r.id!==excludeId&&r.month===record.month&&r.village===record.village).flatMap(r=>parseHouseNumbers(r.houseNumbers)));
+ incoming.forEach(h=>{if(existing.has(h))duplicates.add(h)});
+ return [...duplicates];
+}
+function repeatedPositiveHouseNumbers(rows){
+ const seen=new Set(),duplicates=[],reported=new Set();
+ [...rows].sort((a,b)=>a.date.localeCompare(b.date)).forEach(r=>{
+  parseHouseNumbers(r.houseNumbers).forEach(h=>{
+   const key=r.village+"|"+h;
+   if(seen.has(key)&&!reported.has(key)){duplicates.push({village:r.village,house:h});reported.add(key)}
+   seen.add(key);
+  });
+ });
+ return duplicates;
+}
+function villageTrendChart(kind){
+ const ms=months().slice(-12),visible=villagesVisible();
+ if(!ms.length)return '<p class="muted">ยังไม่มีข้อมูลแนวโน้ม</p>';
+ const values=[];
+ const series=visible.map(v=>{
+  const points=ms.map((m,i)=>{
+   const a=aggregate(records.filter(r=>r.month===m&&r.village===v[0]));
+   const value=kind==="HI"?hi(a):ci(a);
+   if(value!==null)values.push(value);
+   return {i,value};
+  }).filter(p=>p.value!==null);
+  return {v,points};
+ });
+ if(!values.length)return '<p class="muted">ยังไม่มีข้อมูลแนวโน้ม</p>';
+ const colors=["#168b8a","#527aa8","#8a67b5","#dc9b37","#cf6268","#55956d"];
+ const max=Math.max(1,...values)*1.15,W=620,H=240,L=42,R=14,T=18,B=42;
+ const x=i=>L+(ms.length===1?(W-L-R)/2:i*(W-L-R)/(ms.length-1));
+ const y=value=>T+(H-T-B)*(1-value/max);
+ let svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="แนวโน้ม '+kind+' แยกตามหมู่บ้าน">';
+ for(let i=0;i<=4;i++){
+  const yy=T+i*(H-T-B)/4;
+  svg+='<line x1="'+L+'" y1="'+yy+'" x2="'+(W-R)+'" y2="'+yy+'" stroke="#e7eef0"/><text x="'+(L-7)+'" y="'+(yy+4)+'" text-anchor="end" font-size="10" fill="#8096a1">'+num(max*(4-i)/4,1)+'</text>';
+ }
+ ms.forEach((m,i)=>{svg+='<text x="'+x(i)+'" y="'+(H-10)+'" text-anchor="middle" font-size="10" fill="#869aa5">'+safe(m.slice(5))+'/'+safe(m.slice(2,4))+'</text>'});
+ series.forEach((s,i)=>{
+  const color=colors[i%colors.length],pts=s.points;
+  if(pts.length>1)svg+='<polyline points="'+pts.map(p=>x(p.i)+","+y(p.value)).join(" ")+'" fill="none" stroke="'+color+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>';
+  pts.forEach(p=>{svg+='<circle cx="'+x(p.i)+'" cy="'+y(p.value)+'" r="3.8" fill="'+color+'"><title>'+safe("ม."+s.v[0]+" "+s.v[1]+" · "+ms[p.i]+" · "+kind+" "+num(p.value,2)+"%")+'</title></circle>'});
+ });
+ svg+='</svg>';
+ const legend=series.map((s,i)=>'<span><i class="risk-swatch" style="background:'+colors[i%colors.length]+'"></i>ม.'+safe(s.v[0])+' '+safe(s.v[1])+'</span>').join("");
+ return '<div class="chart">'+svg+'</div><div class="risk-legend">'+legend+'</div><p class="small">แสดงเฉพาะเดือนที่มีผลสำรวจ · ค่าร้อยละคำนวณจากผลรวมรายการของแต่ละหมู่บ้านในเดือนนั้น</p>';
+}
+function monthlySurveyHistory(){
+ const ms=months().slice(-12).reverse();
+ if(!ms.length)return '<div class="panel"><h3>ประวัติรายเดือน</h3><p class="muted">ยังไม่มีข้อมูลสำรวจ</p></div>';
+ const body=[];
+ ms.forEach(m=>{
+  villagesVisible().forEach(v=>{
+   const group=records.filter(r=>r.month===m&&r.village===v[0]);
+   if(!group.length)return;
+   const a=aggregate(group);
+   body.push('<tr><td>'+safe(mLabel(m))+'</td><td>ม.'+safe(v[0])+' '+safe(v[1])+'</td><td class="num">'+num(group.length)+'</td><td class="num">'+num(a.houses)+'</td><td class="num">'+num(hi(a),2)+'</td><td class="num">'+num(a.containers)+'</td><td class="num">'+num(ci(a),2)+'</td></tr>');
+  });
+ });
+ return '<div class="panel"><div class="flex"><h3>ประวัติผลสำรวจรายเดือน</h3><span class="tag">12 เดือนล่าสุด</span></div><p class="muted">แยกตามหมู่บ้านและจำนวนครั้งที่บันทึก · บ้านและภาชนะเป็นผลรวมจากรายการสำรวจในเดือนนั้น</p><div class="wrap"><table><thead><tr><th>เดือน</th><th>หมู่บ้าน</th><th class="num">จำนวนครั้งสำรวจ</th><th class="num">บ้านสำรวจรวม</th><th class="num">HI (%)</th><th class="num">ภาชนะสำรวจรวม</th><th class="num">CI (%)</th></tr></thead><tbody>'+body.join("")+'</tbody></table></div></div>';
+}
+
 function villageComparison(m){
  const config={
   HI:{label:"HI — House Index",unit:"บ้านที่พบลูกน้ำ ÷ บ้านสำรวจ",watch:5,high:10},
@@ -275,15 +345,16 @@ function bindMonthPicker(){
  if(latest)latest.addEventListener("click",()=>{followLatest=true;month=months().slice(-1)[0]||dateNow().slice(0,7);render()});
 }
 
-function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Set(rr.map(r=>r.village)).size,den=villagesVisible().reduce((s,v)=>s+v[2],0),cov=rr.length?pct(a.houses,den):null;
-const t=months().map(m=>{const b=aggregate(rowsOf(m));return {month:m,HI:hi(b),CI:ci(b)}});
-let alerts=[];if(reportedCount<villagesVisible().length)alerts.push("รายงานยังไม่ครบทุกหมู่บ้านที่ได้รับอนุญาต");rr.forEach(r=>{if(hi(r)>=5||ci(r)>=3)alerts.push("ม."+r.village+" "+name(r.village)+" มีค่า HI หรือ CI ถึงเกณฑ์ติดตามตัวอย่าง")});
+function dashboard(){const rr=rowsOf(month),a=aggregate(rr),reportedCount=new Set(rr.map(r=>r.village)).size;
+
+let alerts=[];if(reportedCount<villagesVisible().length)alerts.push("รายงานยังไม่ครบทุกหมู่บ้านที่ได้รับอนุญาต");rr.forEach(r=>{if(hi(r)>=5||ci(r)>=3)alerts.push("ม."+r.village+" "+name(r.village)+" มีค่า HI หรือ CI ถึงเกณฑ์ติดตามตัวอย่าง")});const duplicateAddresses=repeatedPositiveHouseNumbers(rr);duplicateAddresses.slice(0,5).forEach(d=>alerts.push("ม."+d.village+" บ้านเลขที่ "+d.house+" ถูกระบุว่าพบลูกน้ำมากกว่า 1 รายการในเดือนนี้ โปรดตรวจสอบ"));
 if(!alerts.length)alerts.push("ไม่พบสัญญาณตามเงื่อนไขติดตามตัวอย่าง ยังต้องเฝ้าระวังต่อเนื่อง");
 return '<div class="flex"><div><h2>ภาพรวมการเฝ้าระวัง</h2><div class="muted">ข้อมูลสดจาก Firestore · '+(admin()?"ทุกหมู่บ้าน":"เฉพาะหมู่ "+safe(vid()))+'</div></div>'+monthPicker()+'</div>'+
-'<p class="muted">กำลังประมวลผลเดือน'+mLabel(month)+' · สถานะซิงก์: '+safe(syncState)+'</p>'+(rr.length===0?'<div class="notice warn">ยังไม่มีผลสำรวจในเดือน'+mLabel(month)+' — ค่า HI/CI ยังประเมินไม่ได้ ไม่ใช่ศูนย์เปอร์เซ็นต์</div>':'')+'<div class="kpis">'+[['House Index (HI)',hi(a)==null?"—":num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',ci(a)==null?"—":num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['ความครอบคลุมการสำรวจ',num(cov,2)+"%",num(a.houses)+" / "+num(den)+" หลังคาเรือน"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
+'<p class="muted">กำลังประมวลผลเดือน'+mLabel(month)+' · สถานะซิงก์: '+safe(syncState)+'</p>'+(rr.length===0?'<div class="notice warn">ยังไม่มีผลสำรวจในเดือน'+mLabel(month)+' — ค่า HI/CI ยังประเมินไม่ได้ ไม่ใช่ศูนย์เปอร์เซ็นต์</div>':'')+'<div class="kpis">'+[['House Index (HI)',hi(a)==null?"—":num(hi(a),2)+"%","บ้านที่พบลูกน้ำ / บ้านสำรวจ"],['Container Index (CI)',ci(a)==null?"—":num(ci(a),2)+"%","ภาชนะที่พบลูกน้ำ / ภาชนะสำรวจ"],['บ้านสำรวจรวมรายการ',num(a.houses)+" หลัง","ผลรวมจากทุกรายการในเดือนนี้ ไม่ใช่จำนวนบ้านไม่ซ้ำ"],['หมู่บ้านที่รายงาน',reportedCount+" / "+villagesVisible().length,mLabel(month)]].map(z=>'<div class="kpi"><span>'+z[0]+'</span><strong>'+z[1]+'</strong><small>'+z[2]+'</small></div>').join("")+'</div>'+
  (admin()?villageComparison(month):'')+
-'<div class="grid"><div class="panel"><h3>แนวโน้ม House Index (HI)</h3><div class="chart">'+chart(t,"HI","#008e8b")+'</div></div><div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div></div>'+
-'<div class="panel"><h3>แนวโน้ม Container Index (CI)</h3><div class="chart">'+chart(t,"CI","#527aa8")+'</div></div><div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง</p>'}
+'<div class="panel"><h3>ข้อมูลที่ควรติดตาม</h3>'+alerts.map(x=>'<div class="notice warn">'+safe(x)+'</div>').join("")+'</div>'+
+'<div class="grid"><div class="panel"><h3>แนวโน้ม HI เปรียบเทียบรายหมู่บ้าน</h3>'+villageTrendChart("HI")+'</div><div class="panel"><h3>แนวโน้ม CI เปรียบเทียบรายหมู่บ้าน</h3>'+villageTrendChart("CI")+'</div></div>'+
+'<div class="panel"><h3>สรุปรายหมู่บ้าน</h3>'+table(month)+'</div>'+sixVillageOverview()+monthlySurveyHistory()+latestPanel()+'<p class="small">ค่าดัชนีใช้เฝ้าระวัง ไม่สามารถใช้ยืนยันหรือทำนายการระบาดได้โดยลำพัง · ตัวเลขบ้านสำรวจเป็นผลรวมจากรายการ และอาจนับซ้ำหากสำรวจบ้านเดิมหลายครั้ง</p>'}
 
 
 const PHOTO_LIMIT=5;
@@ -390,7 +461,7 @@ async function openPhotoGallery(record){
 function survey(){const r=records.find(z=>z.id===editing),currentV=admin()?"1":vid();
 return '<div class="flex"><div><h2>'+(r?"แก้ไข":"บันทึก")+'ผลสำรวจลูกน้ำยุงลาย</h2><div class="muted">บันทึกหลายรายการต่อเดือนต่อหมู่บ้านได้ — ห้ามนับครัวเรือนซ้ำ</div></div><span class="tag">'+(admin()?"ผู้ดูแล":"อสม. หมู่ "+safe(vid()))+'</span></div>'+
 '<div class="grid"><div class="panel"><form id="survey-form"><div class="fields">'+field("วันที่สำรวจ","date","date",r?.date||dateNow(),"required")+villageSelect(r?.village||currentV)+field("จำนวนบ้านที่สำรวจ","houses","number",r?.houses??"",'required min="1" step="1"')+field("จำนวนบ้านที่พบลูกน้ำ","positiveHouses","number",r?.positiveHouses??"",'required min="0" step="1"')+field("จำนวนภาชนะที่สำรวจ","containers","number",r?.containers??"",'required min="1" step="1"')+field("จำนวนภาชนะที่พบลูกน้ำ","positiveContainers","number",r?.positiveContainers??"",'required min="0" step="1"')+
-'<div class="full"><label>บ้านเลขที่ที่พบลูกน้ำ</label><textarea id="houseNumbers" placeholder="เช่น 12, 24/1, 56">'+safe(r?.houseNumbers||"")+'</textarea></div>'+
+'<div class="full"><label>บ้านเลขที่ที่พบลูกน้ำ</label><textarea id="houseNumbers" placeholder="เช่น 12, 24/1, 56">'+safe(r?.houseNumbers||"")+'</textarea><p class="small">ระบบเตือนเมื่อบ้านเลขที่นี้เคยถูกบันทึกในรายการอื่นของหมู่บ้านและเดือนเดียวกัน · คั่นแต่ละบ้านด้วยเครื่องหมายจุลภาคหรือขึ้นบรรทัดใหม่</p></div>'+
 '<div class="full"><label>จุดเสี่ยงที่พบ</label><textarea id="riskPoints" placeholder="โอ่งน้ำ กระถาง ยางรถยนต์เก่า">'+safe(r?.riskPoints||"")+'</textarea></div>'+
 '<div class="full"><label>หมายเหตุ</label><textarea id="note" placeholder="รายละเอียดการแก้ไขหรือการติดตาม">'+safe(r?.note||"")+'</textarea></div>'+photoSection(r)+'</div>'+
 '<div class="notice" id="calculated">HI / CI จะคำนวณอัตโนมัติ</div><div class="gap"><button class="btn primary" type="submit">บันทึกขึ้นฐานข้อมูลกลาง</button><button type="button" class="btn" id="clear">ล้างแบบฟอร์ม</button></div></form></div>'+
@@ -424,6 +495,8 @@ async function saveSurvey(e){
  const previous=editing?records.find(x=>x.id===editing):null;
  if(editing&&!previous){alert("ไม่พบรายการเดิมที่ต้องการแก้ไข โปรดรีเฟรชหน้าแล้วลองอีกครั้ง");return}
  if(previous&&(previous.month!==r.month||previous.village!==r.village)){alert("ไม่อนุญาตให้ย้ายรายการไปเดือนหรือหมู่บ้านอื่น โปรดสร้างรายการใหม่แทน");return}
+ const duplicateNumbers=findDuplicatePositiveHouseNumbers(r,editing);
+ if(duplicateNumbers.length&&!confirm("พบเลขที่บ้านซ้ำกับรายการสำรวจอื่นในหมู่บ้านและเดือนเดียวกัน: "+duplicateNumbers.slice(0,10).join(", ")+(duplicateNumbers.length>10?" และอีก "+(duplicateNumbers.length-10)+" รายการ":"")+". หากเป็นการติดตามบ้านเดิม ค่ารวมรายเดือนอาจนับซ้ำ ต้องการบันทึกต่อหรือไม่?"))return;
  const id=editing||doc(collection(db,"surveys")).id;
  r.photos=Array.isArray(previous?.photos)?[...previous.photos]:[];
  if(r.photos.length+pendingPhotoFiles.length>PHOTO_LIMIT){alert("แนบภาพได้ไม่เกิน "+PHOTO_LIMIT+" ภาพต่อรายการ");return}
