@@ -37,7 +37,7 @@ service cloud.firestore {
         && x.date is string
         && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]$')
         && x.village in ["1","2","12","16","18","19"]
-        && id == x.month + "_" + x.village
+        && id.size() > 0 && id.size() <= 150
         && x.houses is int && x.houses > 0 && x.houses <= 10000
         && x.positiveHouses is int && x.positiveHouses >= 0
         && x.positiveHouses <= x.houses
@@ -66,7 +66,7 @@ service cloud.firestore {
         && x.date is string
         && x.date.matches('^[0-9]{4}-(0[1-9]|1[0-2])-[0-3][0-9]$')
         && x.village in ["1","2","12","16","18","19"]
-        && x.surveyId == x.month + "_" + x.village
+        && x.surveyId.size() > 0 && x.surveyId.size() <= 150
         && x.category in ["risk","survey","campaign","other"]
         && x.caption is string && x.caption.size() <= 150
         && x.imageData is string
